@@ -1,0 +1,14 @@
+/* Design tokens */
+:root {
+  --sda-bg: #fdfcf9;
+  --sda-paper: #ffffff;
+  --sda-ink: #101f39;
+  --sda-muted: #5d646b;
+  --sda-line: #d8d8d2;
+  --sda-soft-line: #ece9e2;
+  --sda-navy: #112240;
+  --sda-accent: #3b82f6;
+  --sda-accent-hover: #285da8;
+  --sda-accent-soft: #eaf2ff;
+  --sda-sans: "Aptos", "Inter", "Montserrat", "Avenir Next", "Helvetica Neue", Arial, ui-sans-serif, system-ui, sans-serif;
+}

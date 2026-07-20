@@ -1,0 +1,36 @@
+/* About page identity panel */
+main.content:has(.about-hero) .quarto-title-block,
+.about-page .quarto-title-block {
+  display: none;
+}
+
+.about-hero {
+  max-width: 760px;
+  margin-bottom: 3rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--sda-line);
+}
+
+.about-hero-copy h1 {
+  max-width: 760px;
+  margin-bottom: 1rem;
+  font-size: clamp(3.7rem, 12vw, 7.5rem);
+  line-height: 0.88;
+}
+
+.about-hero-copy p {
+  max-width: 640px;
+}
+
+.about-kicker {
+  margin-bottom: 0.65rem;
+  color: var(--sda-accent);
+  font-size: 0.78rem;
+  font-weight: 900;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.stacked-wordmark span {
+  display: block;
+}
