@@ -1,0 +1,14 @@
+apps:
+  - id: talent-dashboard
+    title: Talent Analytics
+    description: Review creator performance, content strategy, publishing patterns, and audience data.
+    url: https://dashboard.sun-dataanalytics.com
+    status: available
+    action: Open application
+
+  - id: news-tracker
+    title: Media News Tracker
+    description: Track industry coverage, entities, themes, and relationships across media reporting.
+    url: https://news.sun-dataanalytics.com
+    status: coming-soon
+    action: Coming soon
