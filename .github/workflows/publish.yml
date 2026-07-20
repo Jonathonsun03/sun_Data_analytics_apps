@@ -16,8 +16,6 @@ concurrency:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    env:
-      APP_VARIABLES_JSON: ${{ toJSON(vars) }}
 
     steps:
       - name: Check out source
@@ -34,11 +32,7 @@ jobs:
           install.packages(c(
             "knitr",
             "rmarkdown",
-            "jsonlite",
-            "ggplot2",
-            "dplyr",
-            "plotly",
-            "rENA"
+            "yaml"
           ))
 
       - name: Set up Quarto
