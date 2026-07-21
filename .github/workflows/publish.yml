@@ -3,7 +3,7 @@ name: Render and deploy Quarto website
 on:
   push:
     branches:
-      - main
+      - deploy
   workflow_dispatch:
 
 permissions:
