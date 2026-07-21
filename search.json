@@ -12,5 +12,12 @@
     "title": "Applications",
     "section": "",
     "text": "Select a product below. Access to each product is controlled separately through Cloudflare Access.\n\nSigned in as  Sign out"
+  },
+  {
+    "objectID": "admin.html",
+    "href": "admin.html",
+    "title": "Permission Administration",
+    "section": "",
+    "text": "D1 permission manager\n\n  Cloudflare Access is a separate login gate. If its policy uses an email allowlist, add the client there too. This page controls D1 product and talent permissions after login.\n\n\nAdd clients, assign products and talents, and deactivate access without putting client data in GitHub. All changes are written directly to Cloudflare D1.\n\n\n  Signed in as \n  Back to applications · Sign out\n\n\n\n  Verifying administrator access and loading D1 permissions...\n\n\n\n\n\n  \n    \n      Add a client\n      \n        Client email\n        \n        Add client\n      \n    \n\n    \n      Clients\n      Search clients\n      \n      \n    \n  \n\n  \n    \n      Select a client\n      Choose a client on the left to review or change their D1 permissions.\n    \n\n    \n      \n        \n          Client permissions\n          \n        \n        Save changes\n      \n\n      \n        Email \n         Account is active\n      \n\n      \n        Manual product access\n        These assignments are controlled by this page.\n      \n      \n\n      \n        Managed grants\n        Source-owned grants are shown for context and are not overwritten here.\n      \n      \n    \n\n    \n      \n        \n          Permission catalog\n          Talents\n        \n        \n          New talent name\n          \n          Add talent\n        \n      \n      \n    \n\n    \n      Accountability\n      Recent changes"
   }
 ]

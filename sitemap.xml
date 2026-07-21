@@ -2,6 +2,10 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://apps.sun-dataanalytics.com/index.html</loc>
-    <lastmod>2026-07-21T11:58:51.417Z</lastmod>
+    <lastmod>2026-07-21T23:08:01.514Z</lastmod>
+  </url>
+  <url>
+    <loc>https://apps.sun-dataanalytics.com/admin.html</loc>
+    <lastmod>2026-07-21T23:08:01.513Z</lastmod>
   </url>
 </urlset>
