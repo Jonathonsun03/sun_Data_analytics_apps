@@ -38,7 +38,7 @@ Cloudflare Access login
   -> My Products summary and filtered launcher tiles
 ```
 
-The Worker source is in `worker/src/index.js`. D1 stores users, products, talents, product access, and talent access. The API derives the email only from a validated `Cf-Access-Jwt-Assertion` header and never accepts an email supplied by the browser.
+The Worker source is in `worker/src/index.js`. D1 stores users, products, talents, manual access, and source-owned permission grants. The API derives the email only from a validated `Cf-Access-Jwt-Assertion` header and never accepts an email supplied by the browser.
 
 The launcher filtering is presentation, not the final security boundary. The Youtube Analytics backend must validate its own Access JWT and apply the returned talent IDs to every server-side data query before the permissions can be considered enforced end to end.
 
@@ -153,6 +153,20 @@ For production, apply the migration without the example seed:
 ```bash
 npm run d1:migrate:remote
 ```
+
+Production client rows do not belong in migrations or seeds. The private Google
+Sheet can be synchronized through the Python command in the sibling analytics
+repository:
+
+```bash
+cd ../Sun_Data_Analytics_Analyze_Talent_Data
+.venv/bin/python py_scripts/run/sync_cloudflare_permissions.py
+.venv/bin/python py_scripts/run/sync_cloudflare_permissions.py --apply
+```
+
+The first command is a validation-only preview. The second applies pending D1
+migrations and replaces only the grants owned by the Google Sheet source; manual
+and future payment-source grants remain intact.
 
 Set these Worker variables in Cloudflare Workers & Pages:
 

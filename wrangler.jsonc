@@ -1,16 +1,37 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
+
+  // This is the deployed Worker's name.
   "name": "sun-data-permissions",
+
+  // This is the JavaScript entry point for the Worker.
   "main": "worker/src/index.js",
+
   "compatibility_date": "2026-07-21",
+
+  // Preserve dashboard-configured variables when deploying.
   "keep_vars": true,
+
+  // Do not create a workers.dev URL.
   "workers_dev": false,
+
   "routes": [
     {
       "pattern": "apps.sun-dataanalytics.com/api/*",
       "zone_name": "sun-dataanalytics.com"
     }
   ],
+
+  // This connects the Worker to the D1 database.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "sun-data-permissions",
+      "database_id": "c15849c7-4a03-43e6-b99c-f588b0b44a18",
+      "migrations_dir": "migrations"
+    }
+  ],
+
   "observability": {
     "enabled": true
   }
