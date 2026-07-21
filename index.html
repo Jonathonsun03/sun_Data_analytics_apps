@@ -150,7 +150,21 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <div class="app-launcher">
 <ul class="app-grid" aria-label="Available applications">
-<li>
+<li class="my-products-item">
+<article class="app-tile my-products-tile" data-my-products="" aria-live="polite">
+<span class="app-status">Your access</span>
+<h3 class="anchored">
+My Products
+</h3>
+<p data-products-message="">
+Loading your assigned products and permissions…
+</p>
+<div class="my-products-list" data-products-list="" hidden="">
+
+</div>
+</article>
+</li>
+<li data-product-id="youtube-analytics" hidden="">
 <a class="app-tile" href="https://dashboard.sun-dataanalytics.com"> <span class="app-status">Available</span>
 <h3 class="anchored">
 Youtube Analytics
@@ -160,7 +174,7 @@ Review creator performance, content strategy, publishing patterns, and audience 
 </p>
 <span class="app-action">Open application →</span> </a>
 </li>
-<li>
+<li data-product-id="news-tracker" hidden="">
 <article class="app-tile app-tile--disabled" aria-disabled="true">
 <span class="app-status">Coming soon</span>
 <h3 class="anchored">
@@ -584,6 +598,7 @@ Track industry coverage, entities, themes, and relationships across media report
   </script>
 </div> <!-- /content -->
 <script src="assets/js/access-identity.js"></script>
+<script src="assets/js/my-products.js"></script>
 
 
 
