@@ -25,7 +25,22 @@ User
   -> separately protected application hostname
 ```
 
-Cloudflare Access is the security boundary. The launcher only presents applications; it does not grant authorization to the linked products.
+Cloudflare Access is the outer security boundary. The launcher presents only products returned by the permissions service, while every linked product must still enforce its own authorization.
+
+## Permission architecture
+
+```text
+Cloudflare Access login
+  -> GitHub Pages launcher
+  -> /api/my-products Worker route
+  -> Access JWT signature, issuer, and audience validation
+  -> D1 entitlement query by verified email
+  -> My Products summary and filtered launcher tiles
+```
+
+The Worker source is in `worker/src/index.js`. D1 stores users, products, talents, product access, and talent access. The API derives the email only from a validated `Cf-Access-Jwt-Assertion` header and never accepts an email supplied by the browser.
+
+The launcher filtering is presentation, not the final security boundary. The Youtube Analytics backend must validate its own Access JWT and apply the returned talent IDs to every server-side data query before the permissions can be considered enforced end to end.
 
 ## Configure launcher applications
 
@@ -60,6 +75,8 @@ Supported statuses:
 To add a tile, copy one complete six-field block and change its values. To edit
 a tile, change only the intended values. To remove a tile, delete its complete
 block. Tile order on the page matches the order in `data/apps.yml`.
+
+`My Products` is generated dynamically from D1 and must not be added to `apps.yml`. Keep `apps.yml` for shared product metadata only; user emails and assignments belong in D1.
 
 Preserve the YAML structure:
 
@@ -100,6 +117,57 @@ quarto preview --no-browser --port 4200
 Open `http://localhost:4200/`. Saving `data/apps.yml` triggers a rebuild. If the
 preview does not refresh, stop it with `Ctrl+C`, rerun the command, and refresh
 the browser.
+
+Local Quarto preview shows all catalog products and explains that permissions load only in the Access-protected deployment. It does not bypass Worker authentication.
+
+## Worker and D1 setup
+
+The Worker uses the official Cloudflare `jose` validation pattern and a D1 binding named `DB`. It requires a current Node.js release supported by Wrangler.
+
+Install the pinned project dependencies:
+
+```bash
+cd /srv/projects/sun_Data_analytics_apps
+npm install
+```
+
+Create the D1 database while authenticated to the intended Cloudflare account:
+
+```bash
+npx wrangler login
+npx wrangler d1 create sun-data-permissions --binding DB --update-config
+```
+
+Wrangler writes the real D1 database ID and the `DB` binding into `wrangler.jsonc`. Then initialize and inspect a local database:
+
+```bash
+npm run d1:migrate:local
+npm run d1:seed:local
+npx wrangler d1 execute DB --local --command "SELECT * FROM users"
+```
+
+The example seed contains only `usera@example.com`, `userb@example.com`, and Talent A-D. Never apply `worker/seeds/example.sql` to production.
+
+For production, apply the migration without the example seed:
+
+```bash
+npm run d1:migrate:remote
+```
+
+Set these Worker variables in Cloudflare Workers & Pages:
+
+- `TEAM_DOMAIN`: `https://<your-team-name>.cloudflareaccess.com`
+- `POLICY_AUD`: the Access application Audience tag for `apps.sun-dataanalytics.com`
+
+For local Wrangler configuration, copy `.dev.vars.example` to `.dev.vars` and replace both placeholders. A locally supplied JWT must still have a valid signature, issuer, and audience.
+
+Deploy the Worker route after confirming that `apps.sun-dataanalytics.com` is an orange-clouded DNS hostname:
+
+```bash
+npm run worker:deploy
+```
+
+The route is `apps.sun-dataanalytics.com/api/*`; all other requests continue to GitHub Pages. This Cloudflare-hosted Worker and D1 design does not require a new Cloudflare Tunnel.
 
 The Cloudflare account strip remains hidden locally. The identity script skips
 the Cloudflare-only endpoint on localhost, so local preview should not generate
@@ -166,6 +234,17 @@ This browser-side identity display is informational only. It must not be used to
 - [ ] Create a separate Access application for `dashboard.sun-dataanalytics.com`.
 - [ ] Apply a narrower dashboard allowlist than the general launcher allowlist.
 
+### Worker and D1
+
+- [ ] Install Node.js and run `npm install`.
+- [ ] Authenticate Wrangler to the intended Cloudflare account.
+- [ ] Create `sun-data-permissions` with the `DB` binding and update `wrangler.jsonc`.
+- [ ] Apply `migrations/0001_permissions.sql` remotely.
+- [ ] Set `TEAM_DOMAIN` and `POLICY_AUD` on the Worker.
+- [ ] Add reviewed production users, talents, and assignments.
+- [ ] Deploy the Worker and test `/api/my-products` through Access.
+- [ ] Confirm an unassigned user sees no product tiles.
+
 ### Dashboard and Tunnel
 
 - [ ] Run Shiny on `127.0.0.1:3838`.
@@ -175,11 +254,11 @@ This browser-side identity display is informational only. It must not be used to
 - [ ] Validate the Cloudflare Access JWT before trusting the user email in Shiny.
 - [ ] Map the verified email to allowed talents and roles server-side.
 
-## Current limitation
+## Security boundaries and remaining integration
 
-This launcher is statically generated by GitHub Pages. Every authenticated user receives the same tile catalog.
+The static HTML still contains shared product metadata, but product tiles are hidden until the authenticated Worker returns an assignment. If the permissions request fails, product tiles remain hidden.
 
-Cloudflare Access still protects each destination independently, so seeing a tile does not grant access. Secure per-user tile filtering will require a request-time component such as a Cloudflare Worker or Pages Function connected to a permissions store such as D1.
+This launcher does not grant access to a destination. Cloudflare Access must continue protecting every destination independently. The Youtube Analytics backend still needs a server-side integration with this entitlement source so direct requests and data queries are restricted by the same talent IDs; client-side hiding alone is not authorization.
 
 ## First deployment milestone
 

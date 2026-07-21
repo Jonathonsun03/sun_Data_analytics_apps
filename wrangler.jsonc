@@ -1,0 +1,17 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "sun-data-permissions",
+  "main": "worker/src/index.js",
+  "compatibility_date": "2026-07-21",
+  "keep_vars": true,
+  "workers_dev": false,
+  "routes": [
+    {
+      "pattern": "apps.sun-dataanalytics.com/api/*",
+      "zone_name": "sun-dataanalytics.com"
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}

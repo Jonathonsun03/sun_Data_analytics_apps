@@ -17,10 +17,3 @@ apps:
     url: https://news.sun-dataanalytics.com
     status: coming-soon
     action: Coming soon
-
-  - id: my-products
-    title: My Products
-    description: user permissions and product management for Sun Data Analytics applications.
-    url: 
-    status: coming-soon
-    action: Coming soon

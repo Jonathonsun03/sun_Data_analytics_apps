@@ -9,6 +9,7 @@ format:
     include-after-body:
       text: |
         <script src="assets/js/access-identity.js"></script>
+        <script src="assets/js/my-products.js"></script>
 ---
 
 ::: {.portal-intro}
@@ -186,6 +187,14 @@ if (length(apps) == 0) {
   cat('<p class="app-empty">No applications are configured yet.</p>')
 } else {
   cat('<ul class="app-grid" aria-label="Available applications">\n')
+  cat('<li class="my-products-item">\n')
+  cat('<article class="app-tile my-products-tile" data-my-products aria-live="polite">\n')
+  cat('<span class="app-status">Your access</span>\n')
+  cat('<h3>My Products</h3>\n')
+  cat('<p data-products-message>Loading your assigned products and permissions...</p>\n')
+  cat('<div class="my-products-list" data-products-list hidden></div>\n')
+  cat('</article>\n')
+  cat('</li>\n')
 
   for (app in apps) {
     title <- escape_html(app$title %||% "Application")
@@ -195,7 +204,7 @@ if (length(apps) == 0) {
     url <- normalize_url(app$url)
     available <- identical(status, "available") && !is.na(url)
 
-    cat('<li>\n')
+    cat(sprintf('<li data-product-id="%s" hidden>\n', escape_html(app$id)))
 
     if (available) {
       cat(sprintf('<a class="app-tile" href="%s">\n', escape_html(url)))

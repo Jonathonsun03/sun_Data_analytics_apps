@@ -114,6 +114,45 @@
   color: var(--sda-navy);
 }
 
+.my-products-tile {
+  border-top-color: var(--sda-navy);
+}
+
+.my-products-list {
+  width: 100%;
+}
+
+.my-product + .my-product {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--sda-line);
+}
+
+.my-product h4 {
+  margin: 0 0 0.45rem;
+  font-size: 1.05rem;
+}
+
+.my-product-label {
+  margin-bottom: 0.35rem;
+  color: var(--sda-muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.my-product-permissions {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--sda-muted);
+  font-size: 0.92rem;
+}
+
+.my-product-permissions li + li {
+  margin-top: 0.2rem;
+}
+
 .app-empty,
 .portal-support {
   padding: 1rem 0;
