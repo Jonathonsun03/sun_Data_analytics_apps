@@ -35,6 +35,7 @@
 .app-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-rows: 1fr;
   gap: 1rem;
   margin: 0;
   padding: 0;
@@ -42,11 +43,14 @@
 }
 
 .app-grid li {
+  display: flex;
   min-width: 0;
 }
 
 .app-tile {
   display: flex;
+  width: 100%;
+  height: 100%;
   min-height: 255px;
   flex-direction: column;
   align-items: flex-start;

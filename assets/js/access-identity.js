@@ -1,4 +1,10 @@
 (() => {
+  const localPreviewHosts = new Set(["localhost", "127.0.0.1", "0.0.0.0", "::1", "[::1]"]);
+
+  if (localPreviewHosts.has(window.location.hostname)) {
+    return;
+  }
+
   const emailElement = document.querySelector("[data-access-email]");
 
   if (!emailElement) {

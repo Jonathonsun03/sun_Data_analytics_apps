@@ -49,16 +49,138 @@ normalize_url <- function(value) {
 }
 
 `%||%` <- function(left, right) {
-  if (is.null(left) || length(left) == 0 || is.na(left)) right else left
+  if (
+    is.null(left) ||
+      length(left) == 0 ||
+      (length(left) == 1 && is.atomic(left) && is.na(left))
+  ) {
+    return(right)
+  }
+
+  left
 }
 
 catalog_path <- "data/apps.yml"
+catalog_fields <- c("id", "title", "description", "url", "status", "action")
+
+catalog_error <- function(message) {
+  stop(
+    sprintf("Invalid application catalog in %s: %s", catalog_path, message),
+    call. = FALSE
+  )
+}
+
+require_text_field <- function(app, field, label) {
+  value <- app[[field]]
+
+  if (
+    !is.character(value) ||
+      length(value) != 1 ||
+      is.na(value) ||
+      !nzchar(trimws(value))
+  ) {
+    catalog_error(sprintf("%s field '%s' must contain one text value.", label, field))
+  }
+
+  trimws(value)
+}
+
+validate_app <- function(app, index) {
+  entry_label <- sprintf("Entry %d", index)
+
+  if (!is.list(app) || is.null(names(app))) {
+    catalog_error(sprintf("%s must be an indented YAML mapping.", entry_label))
+  }
+
+  unknown_fields <- setdiff(names(app), catalog_fields)
+  if (length(unknown_fields) > 0) {
+    catalog_error(sprintf(
+      "%s contains unsupported field(s): %s.",
+      entry_label,
+      paste(unknown_fields, collapse = ", ")
+    ))
+  }
+
+  id <- require_text_field(app, "id", entry_label)
+  app_label <- sprintf("Application '%s'", id)
+
+  if (!grepl("^[a-z0-9]+(?:-[a-z0-9]+)*$", id)) {
+    catalog_error(sprintf(
+      "%s id must use lowercase letters, numbers, and single hyphens.",
+      app_label
+    ))
+  }
+
+  title <- require_text_field(app, "title", app_label)
+  description <- require_text_field(app, "description", app_label)
+  url <- require_text_field(app, "url", app_label)
+  status <- tolower(require_text_field(app, "status", app_label))
+  action <- require_text_field(app, "action", app_label)
+
+  if (!grepl("^https://[^[:space:]]+$", url, ignore.case = TRUE)) {
+    catalog_error(sprintf("%s url must be a complete HTTPS URL.", app_label))
+  }
+
+  if (!status %in% c("available", "coming-soon")) {
+    catalog_error(sprintf(
+      "%s status must be 'available' or 'coming-soon'.",
+      app_label
+    ))
+  }
+
+  list(
+    id = id,
+    title = title,
+    description = description,
+    url = url,
+    status = status,
+    action = action
+  )
+}
+
+validate_catalog <- function(catalog) {
+  if (!is.list(catalog) || is.null(catalog$apps)) {
+    catalog_error("The file must start with an 'apps:' list.")
+  }
+
+  if (!is.list(catalog$apps)) {
+    catalog_error("The 'apps' value must be a YAML list.")
+  }
+
+  apps <- lapply(seq_along(catalog$apps), function(index) {
+    validate_app(catalog$apps[[index]], index)
+  })
+  app_ids <- vapply(apps, `[[`, character(1), "id")
+
+  if (anyDuplicated(app_ids)) {
+    duplicate_id <- app_ids[duplicated(app_ids)][[1]]
+    catalog_error(sprintf("Application id '%s' is duplicated.", duplicate_id))
+  }
+
+  apps
+}
+
+if (!file.exists(catalog_path)) {
+  catalog_error("The file does not exist.")
+}
+
+if (!requireNamespace("yaml", quietly = TRUE)) {
+  stop("Install the R package 'yaml' before rendering the launcher.", call. = FALSE)
+}
+
 apps <- list()
 
 if (file.exists(catalog_path) && requireNamespace("yaml", quietly = TRUE)) {
-  catalog <- yaml::read_yaml(catalog_path)
+  catalog <- tryCatch(
+    yaml::read_yaml(catalog_path),
+    error = function(error) {
+      catalog_error(sprintf("YAML could not be parsed: %s", conditionMessage(error)))
+    }
+  )
   apps <- catalog$apps %||% list()
 }
+
+apps <- validate_catalog(catalog)
 
 if (length(apps) == 0) {
   cat('<p class="app-empty">No applications are configured yet.</p>')

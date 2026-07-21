@@ -44,26 +44,93 @@ apps:
     action: Open application
 ```
 
+Each application must contain all six fields:
+
+| Field | Purpose and required format |
+|---|---|
+| `id` | Internal unique ID using lowercase letters, numbers, and single hyphens. It is not displayed. |
+| `title` | Tile heading shown to users. |
+| `description` | Short explanation shown in the tile body. |
+| `url` | Complete HTTPS destination, such as `https://dashboard.sun-dataanalytics.com`. |
+| `status` | Either `available` or `coming-soon`. |
+| `action` | Text shown at the bottom of the tile. |
+
 Supported statuses:
 
 - `available`: renders a clickable tile.
 - `coming-soon`: renders a disabled informational tile.
 
-Only HTTPS application URLs are accepted by the renderer.
+To add a tile, copy one complete six-field block and change its values. To edit
+a tile, change only the intended values. To remove a tile, delete its complete
+block. Tile order on the page matches the order in `data/apps.yml`.
+
+Preserve the YAML structure:
+
+- Keep `apps:` at the left margin.
+- Start each tile with two spaces followed by `- id:`.
+- Indent the other five fields by four spaces.
+- Use spaces rather than tabs.
+- Keep every ID unique.
+- Changing a title or ID does not change its destination; edit `url` separately.
+
+The renderer rejects missing fields, unknown field names, duplicate IDs,
+unsupported statuses, and non-HTTPS URLs with an error identifying the affected
+entry.
 
 ## Local preview
 
-Install the required R packages and preview the site:
+The project `.Rprofile` first tries to reuse the restored R library from
+`Sun_Data_Analytics_Analyze_Talent_Data`. If that library is unavailable, install
+the required packages:
 
 ```r
 install.packages(c("knitr", "rmarkdown", "yaml"))
 ```
 
+Validate the catalog and perform a one-time render:
+
 ```bash
-quarto preview
+cd /srv/projects/sun_Data_analytics_apps
+quarto render
 ```
 
-During local preview, Cloudflare's identity endpoint is unavailable. The signed-in account strip therefore remains hidden.
+Start the live preview:
+
+```bash
+quarto preview --no-browser --port 4200
+```
+
+Open `http://localhost:4200/`. Saving `data/apps.yml` triggers a rebuild. If the
+preview does not refresh, stop it with `Ctrl+C`, rerun the command, and refresh
+the browser.
+
+The Cloudflare account strip remains hidden locally. The identity script skips
+the Cloudflare-only endpoint on localhost, so local preview should not generate
+`/cdn-cgi/access/get-identity` 404 responses after the browser reloads the latest
+JavaScript.
+
+## Tile publishing pipeline
+
+```text
+data/apps.yml
+  -> index.qmd reads and validates every application
+  -> Quarto renders the static launcher into HTML
+  -> local preview serves the result on port 4200
+  -> a push to main starts .github/workflows/publish.yml
+  -> GitHub Actions installs R, YAML, and Quarto dependencies
+  -> Quarto publishes the rendered site to the gh-pages branch
+  -> GitHub Pages serves apps.sun-dataanalytics.com
+  -> Cloudflare Access protects the launcher and each application hostname
+```
+
+Changes made only on a feature branch do not update the production launcher.
+Review the preview, commit the source changes, and merge them into `main`. A push
+to `main` starts deployment automatically. Repository variables no longer create
+tiles; `data/apps.yml` is the single application catalog.
+
+If deployment fails, open the **Render and deploy Quarto website** run under the
+repository's **Actions** tab. Catalog validation errors appear in the render step
+and name the invalid entry or field.
 
 ## Cloudflare identity display
 
