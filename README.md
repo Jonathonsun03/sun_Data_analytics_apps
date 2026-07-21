@@ -154,26 +154,22 @@ For production, apply the migration without the example seed:
 npm run d1:migrate:remote
 ```
 
-Production client rows do not belong in migrations or seeds. The private Google
-Sheet can be synchronized through the Python command in the sibling analytics
-repository:
-
-```bash
-cd ../Sun_Data_Analytics_Analyze_Talent_Data
-.venv/bin/python py_scripts/run/sync_cloudflare_permissions.py
-.venv/bin/python py_scripts/run/sync_cloudflare_permissions.py --apply
-```
-
-The first command is a validation-only preview. The second applies pending D1
-migrations and replaces only the grants owned by the Google Sheet source; manual
-and future payment-source grants remain intact.
+Production client rows do not belong in migrations, seeds, YAML, or GitHub.
+Create and update them through the Access-protected permission administration
+page after the migrations and Worker are deployed. D1 is the single source of
+truth for client identities and entitlements.
 
 Set these Worker variables in Cloudflare Workers & Pages:
 
 - `TEAM_DOMAIN`: `https://<your-team-name>.cloudflareaccess.com`
-- `POLICY_AUD`: the Access application Audience tag for `apps.sun-dataanalytics.com`
+- `POLICY_AUD`: the launcher Access Audience tag; if admin paths use a separate Access application, provide both tags as a comma-separated value
+- `ADMIN_EMAIL`: the exact email returned by Cloudflare Access for the sole administrator
 
-For local Wrangler configuration, copy `.dev.vars.example` to `.dev.vars` and replace both placeholders. A locally supplied JWT must still have a valid signature, issuer, and audience.
+For local Wrangler configuration, copy `.dev.vars.example` to `.dev.vars` and
+replace all placeholders. A locally supplied JWT must still have a valid
+signature, issuer, and audience. `ADMIN_EMAIL` is configuration rather than a
+credential, but keeping it in the Cloudflare dashboard avoids hardcoding an
+identity in application source.
 
 Deploy the Worker route after confirming that `apps.sun-dataanalytics.com` is an orange-clouded DNS hostname:
 
@@ -182,6 +178,91 @@ npm run worker:deploy
 ```
 
 The route is `apps.sun-dataanalytics.com/api/*`; all other requests continue to GitHub Pages. This Cloudflare-hosted Worker and D1 design does not require a new Cloudflare Tunnel.
+
+## Permission administration
+
+The rendered admin page is:
+
+```text
+https://apps.sun-dataanalytics.com/admin.html
+```
+
+It reads and writes D1 through `/api/admin/*`. No D1 API token, database ID, or
+client data is sent to browser source or committed to GitHub. The browser sends
+same-origin JSON to the Worker, and the Worker uses its `DB` binding with prepared
+statements.
+
+The authorization sequence is:
+
+```text
+Cloudflare Access login
+  -> Access JWT signature, issuer, and audience validation
+  -> verified JWT email must equal ADMIN_EMAIL
+  -> same-origin write and X-SDA-Admin header checks
+  -> validated prepared statements update D1
+  -> the same D1 transaction writes an audit record
+```
+
+The email comparison happens inside the Worker on every admin API request. The
+page being hidden or difficult to guess is not treated as security.
+
+For defense in depth, create a more-specific Cloudflare Access self-hosted
+application or policy covering both:
+
+```text
+apps.sun-dataanalytics.com/admin*
+apps.sun-dataanalytics.com/api/admin/*
+```
+
+Allow only the administrator email. If this creates a distinct Access Audience
+tag, append it to `POLICY_AUD` separated by a comma so the Worker accepts the
+JWT issued for either the launcher or admin application.
+
+### What the page manages
+
+- Add a client by email.
+- Change a client email or activate/deactivate the account.
+- Replace that client's manual product and talent assignments in one atomic D1
+  batch.
+- Add, rename, activate, or deactivate talents.
+- Display source-owned grants such as future payment integrations without
+  silently overwriting them.
+- Display the latest 50 administrative audit events.
+
+Deactivation is preferred to deletion because it is reversible and preserves
+the audit history. Saving a client replaces only rows in `product_access` and
+`talent_access`. Rows in `permission_grants` are displayed as managed grants and
+remain owned by their named source, which leaves a safe path for future payment
+automation.
+
+### Admin API routes
+
+| Method | Route | Purpose |
+|---|---|---|
+| `GET` | `/api/admin/state` | Load products, talents, clients, assignments, managed grants, and recent audit events. |
+| `POST` | `/api/admin/users` | Add a client email. |
+| `PUT` | `/api/admin/users/:id` | Update the client and replace manual assignments. |
+| `POST` | `/api/admin/talents` | Add a talent with a stable generated ID. |
+| `PUT` | `/api/admin/talents/:id` | Rename or activate/deactivate a talent. |
+
+Mutation bodies are capped, schema-validated, and accepted only as same-origin
+JSON carrying the custom administration header. All SQL values are passed via
+D1 `.bind()` parameters rather than string interpolation.
+
+### Deployment order
+
+1. Run `npm run d1:migrate:remote` to create the managed-grant and audit tables.
+2. Set `ADMIN_EMAIL` and confirm `TEAM_DOMAIN` and `POLICY_AUD` in the Worker.
+3. Run `npm run worker:deploy`.
+4. Publish the Quarto site through the existing `main` branch workflow.
+5. Visit `/admin.html`, add a test client, grant one product/talent, and confirm
+   the client's My Products tile shows the same assignment.
+
+This page does not edit Cloudflare Access policies. If the launcher Access policy
+contains an explicit email allowlist, the new client must also be added there
+before they can log in. Do not broaden Access until each destination enforces D1
+permissions server-side. Once that enforcement exists, Access can act as the
+identity gate while D1 remains the entitlement source of truth.
 
 The Cloudflare account strip remains hidden locally. The identity script skips
 the Cloudflare-only endpoint on localhost, so local preview should not generate
@@ -245,6 +326,7 @@ This browser-side identity display is informational only. It must not be used to
 - [ ] Configure Google as the primary identity provider.
 - [ ] Keep email one-time PIN as a fallback.
 - [ ] Allow only approved client email addresses.
+- [ ] Protect `/admin*` and `/api/admin/*` with an administrator-only Access policy.
 - [ ] Create a separate Access application for `dashboard.sun-dataanalytics.com`.
 - [ ] Apply a narrower dashboard allowlist than the general launcher allowlist.
 
@@ -253,9 +335,12 @@ This browser-side identity display is informational only. It must not be used to
 - [ ] Install Node.js and run `npm install`.
 - [ ] Authenticate Wrangler to the intended Cloudflare account.
 - [ ] Create `sun-data-permissions` with the `DB` binding and update `wrangler.jsonc`.
-- [ ] Apply `migrations/0001_permissions.sql` remotely.
-- [ ] Set `TEAM_DOMAIN` and `POLICY_AUD` on the Worker.
-- [ ] Add reviewed production users, talents, and assignments.
+- [ ] Apply all pending migrations remotely, including the audit table.
+- [ ] Set `TEAM_DOMAIN`, `POLICY_AUD`, and `ADMIN_EMAIL` on the Worker.
+- [ ] Deploy the Worker before using the admin page.
+- [ ] Add reviewed production users, talents, and assignments through `/admin.html`.
+- [ ] Confirm a non-admin receives `403` from `/api/admin/state`.
+- [ ] Confirm admin mutations create rows in `permission_audit_log`.
 - [ ] Deploy the Worker and test `/api/my-products` through Access.
 - [ ] Confirm an unassigned user sees no product tiles.
 

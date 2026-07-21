@@ -10,4 +10,5 @@
 - `styles/home.css`: homepage-only feature carousel styles.
 - `styles/about.css`: About page-specific title and identity styles.
 - `styles/footer.css`: site-wide custom footer styles.
+- `styles/admin.css`: D1 permission administration layout and controls.
 - `styles/responsive.css`: mobile overrides kept last so they can override earlier modules.

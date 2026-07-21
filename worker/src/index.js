@@ -1,4 +1,8 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
+import {
+  handleAdminRequest,
+  normalizedEmail
+} from "./admin.js";
 
 const jwksByTeamDomain = new Map();
 
@@ -7,7 +11,10 @@ const jsonResponse = (body, status = 200, extraHeaders = {}) =>
     status,
     headers: {
       "Cache-Control": "no-store",
+      "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'",
+      "Referrer-Policy": "no-referrer",
       "X-Content-Type-Options": "nosniff",
+      "X-Frame-Options": "DENY",
       ...extraHeaders
     }
   });
@@ -19,6 +26,12 @@ const configuredAudiences = (value) =>
     ?.split(",")
     .map((audience) => audience.trim())
     .filter(Boolean);
+
+const configuredAdminEmail = (env) => normalizedEmail(env.ADMIN_EMAIL);
+
+const isAdminEmail = (email, env) =>
+  Boolean(configuredAdminEmail(env)) &&
+  normalizedEmail(email) === configuredAdminEmail(env);
 
 const getJwks = (teamDomain) => {
   if (!jwksByTeamDomain.has(teamDomain)) {
@@ -49,12 +62,8 @@ const authenticatedEmail = async (request, env) => {
     issuer: teamDomain,
     audience: audiences
   });
-  const email =
-    typeof payload.email === "string"
-      ? payload.email.trim().toLowerCase()
-      : "";
 
-  return email || null;
+  return normalizedEmail(payload.email) || null;
 };
 
 const productsForEmail = async (database, email) => {
@@ -117,6 +126,10 @@ const productsForEmail = async (database, email) => {
       AND talents.active = 1
     WHERE users.email = ? COLLATE NOCASE
       AND users.active = 1
+      AND (
+        deduplicated_access.talent_id IS NULL
+        OR talents.id IS NOT NULL
+      )
     ORDER BY products.title, talents.display_name
   `;
   const result = await database.prepare(query).bind(email).all();
@@ -148,17 +161,10 @@ const productsForEmail = async (database, email) => {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    const isAdminRoute = url.pathname.startsWith("/api/admin/");
 
-    if (url.pathname !== "/api/my-products") {
+    if (url.pathname !== "/api/my-products" && !isAdminRoute) {
       return jsonResponse({ error: "Not found" }, 404);
-    }
-
-    if (request.method !== "GET") {
-      return jsonResponse(
-        { error: "Method not allowed" },
-        405,
-        { Allow: "GET" }
-      );
     }
 
     if (!env.DB || !env.TEAM_DOMAIN || !env.POLICY_AUD) {
@@ -175,8 +181,37 @@ export default {
         return jsonResponse({ error: "Authentication required" }, 401);
       }
     } catch (error) {
-      console.error("Permissions authentication failed", error);
+      console.error(
+        JSON.stringify({
+          event: "permissions.authentication_failed",
+          path: url.pathname,
+          error: error instanceof Error ? error.message : String(error)
+        })
+      );
       return jsonResponse({ error: "Authentication failed" }, 401);
+    }
+
+    if (isAdminRoute) {
+      if (!configuredAdminEmail(env)) {
+        return jsonResponse(
+          { error: "Permission administration is not configured" },
+          503
+        );
+      }
+
+      if (!isAdminEmail(email, env)) {
+        return jsonResponse({ error: "Administrator access required" }, 403);
+      }
+
+      return handleAdminRequest(request, env.DB, url, email);
+    }
+
+    if (request.method !== "GET") {
+      return jsonResponse(
+        { error: "Method not allowed" },
+        405,
+        { Allow: "GET" }
+      );
     }
 
     try {
@@ -186,7 +221,13 @@ export default {
         products
       });
     } catch (error) {
-      console.error("Permissions database query failed", error);
+      console.error(
+        JSON.stringify({
+          event: "permissions.database_query_failed",
+          path: url.pathname,
+          error: error instanceof Error ? error.message : String(error)
+        })
+      );
       return jsonResponse(
         { error: "Permissions service is temporarily unavailable" },
         503
@@ -194,3 +235,5 @@ export default {
     }
   }
 };
+
+export { configuredAdminEmail, isAdminEmail };
