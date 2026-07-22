@@ -383,3 +383,232 @@
     grid-template-columns: 1fr;
   }
 }
+
+/*
+ * Admin application shell
+ * Quarto adds page-columns/page-full to raw HTML containers. These scoped,
+ * higher-specificity rules keep the permission manager on its own grid.
+ */
+main.content:has(.admin-shell) {
+  padding-top: 2.25rem;
+}
+
+main.content:has(.admin-shell) > #title-block-header {
+  grid-column: page-start / page-end !important;
+  width: min(1180px, calc(100% - 2.5rem));
+  margin-right: auto;
+  margin-bottom: 1.75rem;
+  margin-left: auto;
+  justify-self: center;
+}
+
+main.content:has(.admin-shell) > #title-block-header h1 {
+  max-width: none;
+  margin-bottom: 0.55rem;
+  font-size: clamp(2.4rem, 5.5vw, 4.25rem);
+}
+
+main.content:has(.admin-shell) > #title-block-header .description {
+  max-width: 48rem;
+  color: var(--sda-muted);
+}
+
+.admin-shell.page-columns {
+  display: block;
+  width: min(1180px, calc(100% - 2.5rem));
+  max-width: none;
+  margin-right: auto;
+  margin-left: auto;
+  justify-self: center;
+}
+
+.admin-intro.page-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(270px, 0.4fr);
+  gap: 0.65rem 1rem;
+  margin-bottom: 1.4rem;
+  padding: 1.45rem 1.55rem;
+  border: 1px solid var(--sda-line);
+  border-radius: 12px;
+  background: var(--sda-paper);
+  box-shadow: 0 8px 24px rgba(17, 34, 64, 0.04);
+}
+
+.admin-intro.page-columns > h2 {
+  grid-column: 1;
+  grid-row: 1;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+}
+
+.admin-intro.page-columns > p {
+  grid-column: 1;
+  grid-row: 2;
+  max-width: 46rem;
+  margin: 0;
+  color: var(--sda-muted);
+  font-size: 0.96rem;
+}
+
+.admin-intro.page-columns > .admin-boundary-note {
+  display: flex;
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  gap: 0.45rem;
+  flex-direction: column;
+  justify-content: center;
+  margin: 0;
+  padding: 1.1rem 1.2rem;
+  border: 1px solid #ead7b3;
+  border-left: 4px solid #b7791f;
+  border-radius: 9px;
+  background: #fffaf0;
+  color: #6b4b13;
+  line-height: 1.5;
+}
+
+.admin-intro.page-columns > .access-account,
+.admin-intro.page-columns > .admin-notice {
+  grid-column: 1 / -1;
+}
+
+.admin-intro .access-account {
+  margin-top: 0.15rem;
+  padding: 0.7rem 0.15rem;
+}
+
+.admin-notice {
+  margin-top: 0.15rem;
+  padding: 0.78rem 0.95rem;
+  border-radius: 8px;
+  background: #f7f9fc;
+  font-size: 0.91rem;
+}
+
+.admin-layout.page-columns {
+  display: grid;
+  grid-template-columns: minmax(270px, 0.33fr) minmax(0, 1fr);
+  gap: 1.4rem;
+  align-items: start;
+}
+
+.admin-layout.page-columns > .admin-sidebar {
+  grid-column: 1;
+}
+
+.admin-layout.page-columns > .admin-workspace {
+  grid-column: 2;
+}
+
+.admin-sidebar,
+.admin-workspace {
+  gap: 1.4rem;
+}
+
+.admin-panel {
+  padding: 1.35rem;
+  border: 1px solid var(--sda-line);
+  border-radius: 12px;
+  background: var(--sda-paper);
+  box-shadow: 0 8px 24px rgba(17, 34, 64, 0.045);
+}
+
+.admin-panel h3 {
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+}
+
+.admin-panel input[type="email"],
+.admin-panel input[type="search"],
+.admin-panel input:not([type]) {
+  padding: 0.58rem 0.72rem;
+  border-radius: 7px;
+}
+
+.admin-panel button {
+  border-radius: 7px;
+  transition: background-color 120ms ease, border-color 120ms ease, transform 120ms ease;
+}
+
+.admin-panel button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.admin-user-panel {
+  overflow: hidden;
+}
+
+.admin-user-list .admin-empty-message {
+  padding-right: 1.25rem;
+  padding-left: 1.25rem;
+}
+
+.admin-user-option:hover:not(:disabled) {
+  transform: none;
+}
+
+.admin-primary-action:hover:not(:disabled) {
+  background: var(--sda-accent-hover) !important;
+}
+
+.admin-product-access {
+  border-radius: 8px;
+  background: #fbfcfe;
+}
+
+@media (max-width: 900px) {
+  .admin-intro.page-columns,
+  .admin-layout.page-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-intro.page-columns > h2,
+  .admin-intro.page-columns > p,
+  .admin-intro.page-columns > .admin-boundary-note,
+  .admin-intro.page-columns > .access-account,
+  .admin-intro.page-columns > .admin-notice,
+  .admin-layout.page-columns > .admin-sidebar,
+  .admin-layout.page-columns > .admin-workspace {
+    grid-column: 1;
+  }
+
+  .admin-intro.page-columns > .admin-boundary-note {
+    grid-row: auto;
+    margin-top: 0.35rem;
+  }
+
+  .admin-sidebar {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  }
+}
+
+@media (max-width: 620px) {
+  main.content:has(.admin-shell) {
+    padding-top: 1.5rem;
+  }
+
+  main.content:has(.admin-shell) > #title-block-header,
+  .admin-shell.page-columns {
+    width: min(1180px, calc(100% - 1.5rem));
+  }
+
+  main.content:has(.admin-shell) > #title-block-header {
+    margin-bottom: 1.25rem;
+  }
+
+  .admin-intro.page-columns,
+  .admin-panel {
+    padding: 1.1rem;
+  }
+
+  .admin-sidebar {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-intro .access-account {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
