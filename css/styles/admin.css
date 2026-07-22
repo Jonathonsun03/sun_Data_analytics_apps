@@ -52,7 +52,9 @@
 .admin-panel-heading > *,
 .admin-user-fields > *,
 .admin-section-heading > *,
-.admin-add-talent > * {
+.admin-add-talent > *,
+.admin-editor-actions,
+.admin-row-actions {
   min-width: 0;
 }
 
@@ -256,6 +258,30 @@
   border-color: var(--sda-accent-hover) !important;
   background: var(--sda-accent-hover) !important;
   color: #fff !important;
+}
+
+.admin-danger-action {
+  border-color: #b42318 !important;
+  background: #fff !important;
+  color: #a32017 !important;
+}
+
+.admin-danger-action:hover:not(:disabled) {
+  border-color: #8f1d14 !important;
+  background: #fff4f2 !important;
+  color: #8f1d14 !important;
+}
+
+.admin-editor-actions,
+.admin-row-actions {
+  display: flex;
+  gap: 0.55rem;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.admin-editor-actions {
+  flex-wrap: wrap;
 }
 
 .admin-add-client-panel form {
@@ -488,7 +514,7 @@
 
 .admin-talent-row {
   display: grid;
-  grid-template-columns: minmax(12rem, 1fr) auto minmax(7rem, auto) auto;
+  grid-template-columns: minmax(10rem, 1fr) auto minmax(7rem, auto) auto;
   gap: 0.8rem;
   align-items: center;
   padding: 0.72rem 0;
@@ -585,7 +611,9 @@
 
   .admin-panel-heading > button,
   .admin-add-talent button,
-  .admin-talent-row button {
+  .admin-talent-row button,
+  .admin-editor-actions,
+  .admin-row-actions {
     width: 100%;
   }
 
@@ -595,6 +623,12 @@
 
   .admin-audit-list span {
     text-align: left;
+  }
+
+  .admin-editor-actions,
+  .admin-row-actions {
+    display: grid;
+    grid-template-columns: 1fr;
   }
 }
 

@@ -497,6 +497,92 @@ const updateTalent = async (database, adminEmail, talentId, payload) => {
   ]);
 };
 
+const deleteUser = async (database, adminEmail, userId) => {
+  const current = await database.prepare(`
+    SELECT
+      users.id,
+      users.email,
+      (SELECT COUNT(*) FROM product_access WHERE user_id = users.id)
+        AS product_access_count,
+      (SELECT COUNT(*) FROM talent_access WHERE user_id = users.id)
+        AS talent_access_count,
+      (SELECT COUNT(*) FROM permission_grants WHERE user_id = users.id)
+        AS managed_grant_count
+    FROM users
+    WHERE users.id = ?
+  `).bind(userId).first();
+
+  if (!current) {
+    throw new HttpError(404, "User not found.");
+  }
+
+  if (Number(current.managed_grant_count) > 0) {
+    throw new HttpError(
+      409,
+      "This client has source-owned managed grants and cannot be permanently deleted here. Deactivate the account or remove those grants through their owning source first."
+    );
+  }
+
+  await database.batch([
+    database.prepare("DELETE FROM users WHERE id = ?").bind(userId),
+    database.prepare(`
+      INSERT INTO permission_audit_log (
+        actor_email, action, target_type, target_key, details_json
+      ) VALUES (?, 'user.deleted', 'user', ?, ?)
+    `).bind(
+      adminEmail,
+      String(userId),
+      JSON.stringify({
+        email: current.email,
+        removedProductAssignments: Number(current.product_access_count),
+        removedTalentAssignments: Number(current.talent_access_count)
+      })
+    )
+  ]);
+};
+
+const deleteTalent = async (database, adminEmail, talentId) => {
+  const current = await database.prepare(`
+    SELECT
+      talents.id,
+      talents.display_name,
+      (SELECT COUNT(*) FROM talent_access WHERE talent_id = talents.id)
+        AS manual_assignment_count,
+      (SELECT COUNT(*) FROM permission_grants WHERE talent_id = talents.id)
+        AS managed_grant_count
+    FROM talents
+    WHERE talents.id = ?
+  `).bind(talentId).first();
+
+  if (!current) {
+    throw new HttpError(404, "Talent not found.");
+  }
+
+  if (Number(current.managed_grant_count) > 0) {
+    throw new HttpError(
+      409,
+      "This talent has source-owned managed grants and cannot be permanently deleted here. Deactivate it or remove those grants through their owning source first."
+    );
+  }
+
+  await database.batch([
+    database.prepare("DELETE FROM talents WHERE id = ?").bind(talentId),
+    database.prepare(`
+      INSERT INTO permission_audit_log (
+        actor_email, action, target_type, target_key, details_json
+      ) VALUES (?, 'talent.deleted', 'talent', ?, ?)
+    `).bind(
+      adminEmail,
+      talentId,
+      JSON.stringify({
+        id: talentId,
+        displayName: current.display_name,
+        removedManualAssignments: Number(current.manual_assignment_count)
+      })
+    )
+  ]);
+};
+
 const methodNotAllowed = (allow) =>
   jsonResponse({ error: "Method not allowed" }, 405, { Allow: allow });
 
@@ -526,15 +612,23 @@ const routeAdminRequest = async (request, database, url, adminEmail) => {
 
   const userMatch = url.pathname.match(/^\/api\/admin\/users\/(\d+)$/);
   if (userMatch) {
-    if (request.method !== "PUT") return methodNotAllowed("PUT");
     const userId = Number(userMatch[1]);
     if (!Number.isSafeInteger(userId) || userId < 1) {
       throw new HttpError(400, "User ID is invalid.");
     }
 
-    const payload = validateUserUpdatePayload(await readJsonBody(request));
-    await updateUser(database, adminEmail, userId, payload);
-    return jsonResponse({ ok: true });
+    if (request.method === "PUT") {
+      const payload = validateUserUpdatePayload(await readJsonBody(request));
+      await updateUser(database, adminEmail, userId, payload);
+      return jsonResponse({ ok: true });
+    }
+
+    if (request.method === "DELETE") {
+      await deleteUser(database, adminEmail, userId);
+      return jsonResponse({ ok: true });
+    }
+
+    return methodNotAllowed("PUT, DELETE");
   }
 
   if (url.pathname === "/api/admin/talents") {
@@ -548,10 +642,18 @@ const routeAdminRequest = async (request, database, url, adminEmail) => {
     /^\/api\/admin\/talents\/([a-z0-9]+(?:-[a-z0-9]+)*)$/
   );
   if (talentMatch) {
-    if (request.method !== "PUT") return methodNotAllowed("PUT");
-    const payload = validateTalentUpdatePayload(await readJsonBody(request));
-    await updateTalent(database, adminEmail, talentMatch[1], payload);
-    return jsonResponse({ ok: true });
+    if (request.method === "PUT") {
+      const payload = validateTalentUpdatePayload(await readJsonBody(request));
+      await updateTalent(database, adminEmail, talentMatch[1], payload);
+      return jsonResponse({ ok: true });
+    }
+
+    if (request.method === "DELETE") {
+      await deleteTalent(database, adminEmail, talentMatch[1]);
+      return jsonResponse({ ok: true });
+    }
+
+    return methodNotAllowed("PUT, DELETE");
   }
 
   return jsonResponse({ error: "Not found" }, 404);
@@ -588,6 +690,8 @@ const handleAdminRequest = async (request, database, url, adminEmail) => {
 };
 
 export {
+  deleteTalent,
+  deleteUser,
   handleAdminRequest,
   normalizedEmail,
   requireAdminWriteRequest,

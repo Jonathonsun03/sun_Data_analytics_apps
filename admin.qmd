@@ -70,7 +70,10 @@ format:
           <span class="admin-eyebrow">Selected client</span>
           <h2 data-editor-title></h2>
         </div>
-        <button type="submit" class="admin-primary-action">Save changes</button>
+        <div class="admin-editor-actions">
+          <button type="submit" class="admin-primary-action">Save changes</button>
+          <button type="button" class="admin-danger-action" data-delete-user>Delete client</button>
+        </div>
       </div>
 
       <div class="admin-user-fields">

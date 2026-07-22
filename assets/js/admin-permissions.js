@@ -13,6 +13,7 @@
     emptySelection: root.querySelector("[data-empty-selection]"),
     userEditor: root.querySelector("[data-user-editor]"),
     editorTitle: root.querySelector("[data-editor-title]"),
+    deleteUser: root.querySelector("[data-delete-user]"),
     productEditor: root.querySelector("[data-product-editor]"),
     managedGrants: root.querySelector("[data-managed-grants]"),
     talentList: root.querySelector("[data-talent-list]"),
@@ -29,10 +30,14 @@
 
   const apiRequest = async (path, options = {}) => {
     const headers = new Headers(options.headers ?? {});
+    const method = (options.method ?? "GET").toUpperCase();
     headers.set("Accept", "application/json");
 
     if (options.body) {
       headers.set("Content-Type", "application/json");
+    }
+
+    if (method !== "GET" && method !== "HEAD") {
       headers.set("X-SDA-Admin", "1");
     }
 
@@ -248,7 +253,14 @@
       const button = document.createElement("button");
       button.type = "submit";
       button.textContent = "Save";
-      form.append(name, activeLabel, id, button);
+      const deleteButton = document.createElement("button");
+      deleteButton.type = "button";
+      deleteButton.className = "admin-danger-action";
+      deleteButton.textContent = "Delete";
+      const actions = document.createElement("div");
+      actions.className = "admin-row-actions";
+      actions.append(button, deleteButton);
+      form.append(name, activeLabel, id, actions);
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
         if (
@@ -276,6 +288,28 @@
           setFormBusy(form, false);
         }
       });
+      deleteButton.addEventListener("click", async () => {
+        if (
+          !globalThis.confirm(
+            `Permanently delete '${talent.displayName}'? This removes it from every client's manual permissions and cannot be undone.`
+          )
+        ) {
+          return;
+        }
+
+        setFormBusy(form, true);
+        try {
+          await apiRequest(`/api/admin/talents/${talent.id}`, {
+            method: "DELETE"
+          });
+          await loadState(selectedUserId);
+          setStatus(`Deleted talent '${talent.displayName}'.`, "success");
+        } catch (error) {
+          setStatus(error.message, "error");
+        } finally {
+          setFormBusy(form, false);
+        }
+      });
       elements.talentList.appendChild(form);
     }
   };
@@ -292,6 +326,12 @@
     }
     if (entry.action === "talent.updated") {
       return `Updated talent ${entry.details.displayName ?? entry.targetKey}`;
+    }
+    if (entry.action === "user.deleted") {
+      return `Deleted ${entry.details.email ?? `user ${entry.targetKey}`}`;
+    }
+    if (entry.action === "talent.deleted") {
+      return `Deleted talent ${entry.details.displayName ?? entry.targetKey}`;
     }
     return `${entry.action} ${entry.targetType} ${entry.targetKey}`;
   };
@@ -433,6 +473,33 @@
       setStatus(error.message, "error");
     } finally {
       setFormBusy(form, false);
+    }
+  });
+
+  elements.deleteUser.addEventListener("click", async () => {
+    const user = state.users.find((candidate) => candidate.id === selectedUserId);
+    if (!user) return;
+
+    if (
+      !globalThis.confirm(
+        `Permanently delete ${user.email}? This removes their manual permissions and cannot be undone.`
+      )
+    ) {
+      return;
+    }
+
+    setFormBusy(elements.userEditor, true);
+    try {
+      await apiRequest(`/api/admin/users/${user.id}`, {
+        method: "DELETE"
+      });
+      selectedUserId = null;
+      await loadState();
+      setStatus(`Deleted ${user.email}.`, "success");
+    } catch (error) {
+      setStatus(error.message, "error");
+    } finally {
+      setFormBusy(elements.userEditor, false);
     }
   });
 

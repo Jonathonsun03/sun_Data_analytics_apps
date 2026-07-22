@@ -222,15 +222,25 @@ JWT issued for either the launcher or admin application.
 
 - Add a client by email.
 - Change a client email or activate/deactivate the account.
+- Permanently delete a manually managed client and cascade-delete their manual
+  product and talent assignments.
 - Replace that client's manual product and talent assignments in one atomic D1
   batch.
 - Add, rename, activate, or deactivate talents.
+- Permanently delete a manually managed talent and remove it from manual client
+  assignments.
 - Display source-owned grants such as future payment integrations without
   silently overwriting them.
 - Display the latest 50 administrative audit events.
 
 Deactivation is preferred to deletion because it is reversible and preserves
-the audit history. Saving a client replaces only rows in `product_access` and
+the account record. Permanent deletion requires a browser confirmation and is
+recorded in `permission_audit_log`. A client or talent referenced by a
+source-owned `permission_grants` row cannot be deleted from the manual admin
+page; deactivate it or remove the grant through its owning source first. This
+prevents future payment or synchronization records from being silently erased.
+
+Saving a client replaces only rows in `product_access` and
 `talent_access`. Rows in `permission_grants` are displayed as managed grants and
 remain owned by their named source, which leaves a safe path for future payment
 automation.
@@ -242,12 +252,15 @@ automation.
 | `GET` | `/api/admin/state` | Load products, talents, clients, assignments, managed grants, and recent audit events. |
 | `POST` | `/api/admin/users` | Add a client email. |
 | `PUT` | `/api/admin/users/:id` | Update the client and replace manual assignments. |
+| `DELETE` | `/api/admin/users/:id` | Permanently delete a manual client and their manual assignments. |
 | `POST` | `/api/admin/talents` | Add a talent with a stable generated ID. |
 | `PUT` | `/api/admin/talents/:id` | Rename or activate/deactivate a talent. |
+| `DELETE` | `/api/admin/talents/:id` | Permanently delete a manual talent and its manual assignments. |
 
-Mutation bodies are capped, schema-validated, and accepted only as same-origin
-JSON carrying the custom administration header. All SQL values are passed via
-D1 `.bind()` parameters rather than string interpolation.
+Mutations are accepted only from the same origin while carrying the custom
+administration header. JSON mutation bodies are capped and schema-validated.
+All SQL values are passed through D1 `.bind()` parameters rather than string
+interpolation.
 
 ### Deployment order
 

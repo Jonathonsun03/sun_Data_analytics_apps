@@ -2,12 +2,44 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  deleteTalent,
+  deleteUser,
   normalizedEmail,
   requireAdminWriteRequest,
   talentIdForName,
   validateUserUpdatePayload
 } from "../src/admin.js";
 import { configuredAdminEmail, isAdminEmail } from "../src/index.js";
+
+const fakeDatabase = ({ user = null, talent = null } = {}) => {
+  const batches = [];
+
+  return {
+    batches,
+    prepare(sql) {
+      return {
+        sql,
+        values: [],
+        bind(...values) {
+          this.values = values;
+          return this;
+        },
+        async first() {
+          if (sql.includes("FROM users")) return user;
+          if (sql.includes("FROM talents")) return talent;
+          return null;
+        }
+      };
+    },
+    async batch(statements) {
+      batches.push(statements);
+      return statements.map(() => ({
+        success: true,
+        meta: { changes: 1 }
+      }));
+    }
+  };
+};
 
 test("admin email comparison uses the verified normalized address", () => {
   const env = { ADMIN_EMAIL: " Jonathon@Example.com " };
@@ -100,4 +132,87 @@ test("admin writes require both same-origin and the custom request header", () =
     () => requireAdminWriteRequest(missingHeaderRequest, url),
     /header is missing/
   );
+});
+
+test("deleting a manual client cascades assignments and records an audit event", async () => {
+  const database = fakeDatabase({
+    user: {
+      id: 7,
+      email: "client@example.com",
+      product_access_count: 2,
+      talent_access_count: 4,
+      managed_grant_count: 0
+    }
+  });
+
+  await deleteUser(database, "admin@example.com", 7);
+
+  assert.equal(database.batches.length, 1);
+  const [deleteStatement, auditStatement] = database.batches[0];
+  assert.match(deleteStatement.sql, /DELETE FROM users/);
+  assert.deepEqual(deleteStatement.values, [7]);
+  assert.match(auditStatement.sql, /'user\.deleted'/);
+  assert.deepEqual(auditStatement.values.slice(0, 2), ["admin@example.com", "7"]);
+  assert.deepEqual(JSON.parse(auditStatement.values[2]), {
+    email: "client@example.com",
+    removedProductAssignments: 2,
+    removedTalentAssignments: 4
+  });
+});
+
+test("deleting a manual talent cascades assignments and records an audit event", async () => {
+  const database = fakeDatabase({
+    talent: {
+      id: "talent-a",
+      display_name: "Talent A",
+      manual_assignment_count: 3,
+      managed_grant_count: 0
+    }
+  });
+
+  await deleteTalent(database, "admin@example.com", "talent-a");
+
+  assert.equal(database.batches.length, 1);
+  const [deleteStatement, auditStatement] = database.batches[0];
+  assert.match(deleteStatement.sql, /DELETE FROM talents/);
+  assert.deepEqual(deleteStatement.values, ["talent-a"]);
+  assert.match(auditStatement.sql, /'talent\.deleted'/);
+  assert.deepEqual(JSON.parse(auditStatement.values[2]), {
+    id: "talent-a",
+    displayName: "Talent A",
+    removedManualAssignments: 3
+  });
+});
+
+test("source-owned grants prevent permanent deletion", async () => {
+  const database = fakeDatabase({
+    user: {
+      id: 8,
+      email: "managed@example.com",
+      product_access_count: 0,
+      talent_access_count: 0,
+      managed_grant_count: 1
+    }
+  });
+
+  await assert.rejects(
+    deleteUser(database, "admin@example.com", 8),
+    /source-owned managed grants/
+  );
+  assert.equal(database.batches.length, 0);
+
+  const talentDatabase = fakeDatabase({
+    talent: {
+      id: "managed-talent",
+      display_name: "Managed Talent",
+      manual_assignment_count: 0,
+      managed_grant_count: 2
+    }
+  });
+
+  await assert.rejects(
+    deleteTalent(talentDatabase, "admin@example.com", "managed-talent"),
+    /source-owned managed grants/
+  );
+  assert.equal(talentDatabase.batches.length, 0);
 });
