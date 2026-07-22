@@ -6,7 +6,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="description" content="Manage application and talent access stored in Cloudflare D1.">
+<meta name="description" content="Add clients and manage their product and talent access.">
 
 <title>Permission Administration – Sun Data Analytics Apps</title>
 <style>
@@ -115,7 +115,7 @@ ul.task-list li input[type="checkbox"] {
 <!-- margin-sidebar -->
     
 <!-- main -->
-<main class="content page-columns page-full column-page" id="quarto-document-content">
+<main class="content column-page" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
@@ -124,7 +124,7 @@ ul.task-list li input[type="checkbox"] {
 
 <div>
   <div class="description">
-    Manage application and talent access stored in Cloudflare D1.
+    Add clients and manage their product and talent access.
   </div>
 </div>
 
@@ -141,83 +141,93 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<div class="admin-shell page-columns page-full" data-admin-root="">
-<section class="admin-intro page-columns page-full">
-<h2 class="anchored">D1 permission manager</h2>
-<aside class="admin-boundary-note">
-  <strong>Cloudflare Access is a separate login gate.</strong> If its policy uses an email allowlist, add the client there too. This page controls D1 product and talent permissions after login.
-</aside>
+<div class="admin-shell" data-admin-root="">
+<section class="admin-intro" aria-label="Administrator status">
+  <div class="admin-boundary-note" role="note">
+    <strong>Cloudflare Access controls sign-in.</strong>
+    <span>D1 controls each client’s product and talent permissions after login.</span>
+  </div>
 
-<p>Add clients, assign products and talents, and deactivate access without putting client data in GitHub. All changes are written directly to Cloudflare D1.</p>
+  <div class="admin-session-card">
+    <div class="access-account" hidden="">
+      <span>Signed in as <strong data-access-email=""></strong></span>
+      <span><a href="index.html">Back to applications</a> · <a href="./cdn-cgi/access/logout">Sign out</a></span>
+    </div>
 
-<div class="access-account" hidden="">
-  <span>Signed in as <strong data-access-email=""></strong></span>
-  <span><a href="index.html">Back to applications</a> · <a href="./cdn-cgi/access/logout">Sign out</a></span>
-</div>
-
-<div class="admin-notice" data-admin-status="" role="status" aria-live="polite">
-  Verifying administrator access and loading D1 permissions...
-</div>
-
+    <div class="admin-notice" data-admin-status="" role="status" aria-live="polite">
+      Verifying administrator access and loading D1 permissions...
+    </div>
+  </div>
 </section>
 
-<div class="admin-layout page-columns page-full" data-admin-content="" hidden="">
-  <aside class="admin-sidebar" aria-label="Permission records">
-    <section class="admin-panel">
-      <h3 class="anchored">Add a client</h3>
+<div class="admin-layout" data-admin-content="" hidden="">
+  <div class="admin-sidebar" role="complementary" aria-label="Client records">
+    <section class="admin-panel admin-add-client-panel">
+      <span class="admin-eyebrow">New account</span>
+      <h2 class="anchored">Add a client</h2>
       <form data-add-user-form="">
         <label for="new-user-email">Client email</label>
-        <input id="new-user-email" name="email" type="email" autocomplete="off" required="">
-        <button type="submit">Add client</button>
+        <input id="new-user-email" name="email" type="email" autocomplete="off" placeholder="client@example.com" required="">
+        <button type="submit" class="admin-primary-action">Add client</button>
       </form>
     </section>
 
     <section class="admin-panel admin-user-panel">
-      <h3 class="anchored">Clients</h3>
+      <div class="admin-panel-heading">
+        <div>
+          <span class="admin-eyebrow">Directory</span>
+          <h2 class="anchored">Clients</h2>
+        </div>
+      </div>
       <label class="visually-hidden" for="user-search">Search clients</label>
       <input id="user-search" type="search" placeholder="Search by email" data-user-search="">
       <div class="admin-user-list" data-user-list=""></div>
     </section>
-  </aside>
+  </div>
 
-  <main class="admin-workspace">
+  <div class="admin-workspace">
     <section class="admin-panel admin-empty-selection" data-empty-selection="">
-      <h3 class="anchored">Select a client</h3>
-      <p>Choose a client on the left to review or change their D1 permissions.</p>
+      <span class="admin-eyebrow">Client permissions</span>
+      <h2 class="anchored">Select a client</h2>
+      <p>Select a client to review or change their permissions.</p>
     </section>
 
     <form class="admin-panel admin-user-editor" data-user-editor="" hidden="">
-      <div class="admin-panel-heading">
+      <div class="admin-panel-heading admin-editor-heading">
         <div>
-          <span class="admin-eyebrow">Client permissions</span>
-          <h3 data-editor-title="" class="anchored"></h3>
+          <span class="admin-eyebrow">Selected client</span>
+          <h2 data-editor-title="" class="anchored"></h2>
         </div>
         <button type="submit" class="admin-primary-action">Save changes</button>
       </div>
 
       <div class="admin-user-fields">
         <label>Email <input name="email" type="email" required=""></label>
-        <label class="admin-check"><input name="active" type="checkbox"> Account is active</label>
+        <label class="admin-check admin-account-status"><input name="active" type="checkbox"> Account is active</label>
       </div>
 
       <div class="admin-section-heading">
-        <h4 class="anchored">Manual product access</h4>
-        <p>These assignments are controlled by this page.</p>
+        <div>
+          <h3 class="anchored">Product and talent access</h3>
+          <p>Enable a product, then choose the talents this client can access.</p>
+        </div>
       </div>
       <div data-product-editor=""></div>
 
       <div class="admin-section-heading">
-        <h4 class="anchored">Managed grants</h4>
-        <p>Source-owned grants are shown for context and are not overwritten here.</p>
+        <div>
+          <h3 class="anchored">Managed grants</h3>
+          <p>Source-owned grants are shown for context and are not overwritten here.</p>
+        </div>
       </div>
       <div data-managed-grants=""></div>
     </form>
 
-    <section class="admin-panel">
+    <section class="admin-panel admin-talent-panel">
       <div class="admin-panel-heading">
         <div>
           <span class="admin-eyebrow">Permission catalog</span>
-          <h3 class="anchored">Talents</h3>
+          <h2 class="anchored">Talents</h2>
         </div>
         <form class="admin-add-talent" data-add-talent-form="">
           <label class="visually-hidden" for="new-talent-name">New talent name</label>
@@ -228,14 +238,13 @@ ul.task-list li input[type="checkbox"] {
       <div class="admin-talent-list" data-talent-list=""></div>
     </section>
 
-    <section class="admin-panel">
+    <section class="admin-panel admin-audit-panel">
       <span class="admin-eyebrow">Accountability</span>
-      <h3 class="anchored">Recent changes</h3>
+      <h2 class="anchored">Recent changes</h2>
       <div class="admin-audit-list" data-audit-list=""></div>
     </section>
-  </main>
+  </div>
 </div>
-
 </div>
 
 
