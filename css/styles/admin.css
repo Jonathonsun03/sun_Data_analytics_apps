@@ -179,6 +179,19 @@
   font-size: 1rem;
 }
 
+.admin-catalog-status,
+.admin-panel-help {
+  max-width: 48rem;
+  margin: 0;
+  color: var(--sda-muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.admin-panel-help {
+  margin-bottom: 0.85rem;
+}
+
 .admin-eyebrow {
   display: block;
   margin-bottom: 0.28rem;
@@ -527,6 +540,11 @@
   font-size: 0.78rem;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.admin-talent-row input[readonly] {
+  background: #f6f8fb;
+  color: var(--sda-muted);
 }
 
 .admin-audit-list {

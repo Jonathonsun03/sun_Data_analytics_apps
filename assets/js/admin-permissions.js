@@ -16,6 +16,7 @@
     deleteUser: root.querySelector("[data-delete-user]"),
     productEditor: root.querySelector("[data-product-editor]"),
     managedGrants: root.querySelector("[data-managed-grants]"),
+    catalogSync: root.querySelector("[data-catalog-sync-status]"),
     talentList: root.querySelector("[data-talent-list]"),
     auditList: root.querySelector("[data-audit-list]")
   };
@@ -138,7 +139,12 @@
 
     const talentGrid = document.createElement("div");
     talentGrid.className = "admin-talent-grid";
-    const activeTalents = state.talents.filter((talent) => talent.active);
+    const activeTalents = state.talents.filter(
+      (talent) =>
+        talent.active &&
+        (product.id !== "youtube-analytics" ||
+          (talent.catalogActive && talent.talentCode))
+    );
 
     if (activeTalents.length === 0) {
       appendEmptyMessage(talentGrid, "No active talents. Product-only access is allowed.");
@@ -228,6 +234,15 @@
   const renderTalents = () => {
     elements.talentList.replaceChildren();
 
+    if (state.catalogSync) {
+      elements.catalogSync.textContent =
+        `${state.catalogSync.discoveredCount} DuckDB talents synchronized ` +
+        `${formatDate(state.catalogSync.syncedAt)}.`;
+    } else {
+      elements.catalogSync.textContent =
+        "The DuckDB talent catalog has not been synchronized yet.";
+    }
+
     if (state.talents.length === 0) {
       appendEmptyMessage(elements.talentList, "No talents have been added yet.");
       return;
@@ -240,6 +255,7 @@
       name.name = "displayName";
       name.value = talent.displayName;
       name.required = true;
+      name.readOnly = Boolean(talent.talentCode);
       name.setAttribute("aria-label", `Talent name for ${talent.displayName}`);
       const activeLabel = document.createElement("label");
       activeLabel.className = "admin-check";
@@ -249,14 +265,17 @@
       active.checked = talent.active;
       activeLabel.append(active, document.createTextNode("Active"));
       const id = document.createElement("code");
-      id.textContent = talent.id;
+      id.textContent = talent.talentCode
+        ? `${talent.talentCode} · DuckDB`
+        : `${talent.id} · manual`;
       const button = document.createElement("button");
       button.type = "submit";
       button.textContent = "Save";
       const deleteButton = document.createElement("button");
       deleteButton.type = "button";
       deleteButton.className = "admin-danger-action";
-      deleteButton.textContent = "Delete";
+      deleteButton.textContent = talent.talentCode ? "Catalog managed" : "Delete";
+      deleteButton.disabled = Boolean(talent.talentCode);
       const actions = document.createElement("div");
       actions.className = "admin-row-actions";
       actions.append(button, deleteButton);
@@ -288,28 +307,30 @@
           setFormBusy(form, false);
         }
       });
-      deleteButton.addEventListener("click", async () => {
-        if (
-          !globalThis.confirm(
-            `Permanently delete '${talent.displayName}'? This removes it from every client's manual permissions and cannot be undone.`
-          )
-        ) {
-          return;
-        }
+      if (!talent.talentCode) {
+        deleteButton.addEventListener("click", async () => {
+          if (
+            !globalThis.confirm(
+              `Permanently delete '${talent.displayName}'? This removes it from every client's manual permissions and cannot be undone.`
+            )
+          ) {
+            return;
+          }
 
-        setFormBusy(form, true);
-        try {
-          await apiRequest(`/api/admin/talents/${talent.id}`, {
-            method: "DELETE"
-          });
-          await loadState(selectedUserId);
-          setStatus(`Deleted talent '${talent.displayName}'.`, "success");
-        } catch (error) {
-          setStatus(error.message, "error");
-        } finally {
-          setFormBusy(form, false);
-        }
-      });
+          setFormBusy(form, true);
+          try {
+            await apiRequest(`/api/admin/talents/${talent.id}`, {
+              method: "DELETE"
+            });
+            await loadState(selectedUserId);
+            setStatus(`Deleted talent '${talent.displayName}'.`, "success");
+          } catch (error) {
+            setStatus(error.message, "error");
+          } finally {
+            setFormBusy(form, false);
+          }
+        });
+      }
       elements.talentList.appendChild(form);
     }
   };

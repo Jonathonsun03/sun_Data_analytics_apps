@@ -231,6 +231,9 @@ ul.task-list li input[type="checkbox"] {
         <div>
           <span class="admin-eyebrow">Permission catalog</span>
           <h2 class="anchored">Talents</h2>
+          <p class="admin-catalog-status" data-catalog-sync-status="">
+            Loading the DuckDB talent catalog status...
+          </p>
         </div>
         <form class="admin-add-talent" data-add-talent-form="">
           <label class="visually-hidden" for="new-talent-name">New talent name</label>
@@ -238,6 +241,9 @@ ul.task-list li input[type="checkbox"] {
           <button type="submit">Add talent</button>
         </form>
       </div>
+      <p class="admin-panel-help">
+        Dashboard talents are synchronized from DuckDB. Manual talents can still be added for other products.
+      </p>
       <div class="admin-talent-list" data-talent-list=""></div>
     </section>
 
