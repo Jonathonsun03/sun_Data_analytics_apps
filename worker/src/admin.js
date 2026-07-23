@@ -216,9 +216,12 @@ const parseAuditDetails = (value) => {
 const adminState = async (database, adminEmail) => {
   const results = await database.batch([
     database.prepare("SELECT id, title, url, active FROM products ORDER BY title"),
-    database.prepare(
-      "SELECT id, display_name, active FROM talents ORDER BY display_name"
-    ),
+    database.prepare(`
+      SELECT
+        id, display_name, active, talent_code, catalog_active, catalog_synced_at
+      FROM talents
+      ORDER BY display_name
+    `),
     database.prepare(`
       SELECT id, email, active, created_at, updated_at
       FROM users
@@ -250,10 +253,24 @@ const adminState = async (database, adminEmail) => {
       FROM permission_audit_log
       ORDER BY id DESC
       LIMIT 50
+    `),
+    database.prepare(`
+      SELECT
+        source, synced_at, discovered_count, inserted_count, updated_count
+      FROM talent_catalog_sync_runs
+      ORDER BY id DESC
+      LIMIT 1
     `)
   ]);
-  const [productRows, talentRows, userRows, manualRows, managedRows, auditRows] =
-    results.map((result) => result.results ?? []);
+  const [
+    productRows,
+    talentRows,
+    userRows,
+    manualRows,
+    managedRows,
+    auditRows,
+    catalogSyncRows
+  ] = results.map((result) => result.results ?? []);
   const users = new Map(
     userRows.map((row) => [
       row.id,
@@ -312,8 +329,20 @@ const adminState = async (database, adminEmail) => {
     talents: talentRows.map((row) => ({
       id: row.id,
       displayName: row.display_name,
-      active: Boolean(row.active)
+      active: Boolean(row.active),
+      talentCode: row.talent_code,
+      catalogActive: Boolean(row.catalog_active),
+      catalogSyncedAt: row.catalog_synced_at
     })),
+    catalogSync: catalogSyncRows.length === 0
+      ? null
+      : {
+          source: catalogSyncRows[0].source,
+          syncedAt: catalogSyncRows[0].synced_at,
+          discoveredCount: Number(catalogSyncRows[0].discovered_count),
+          insertedCount: Number(catalogSyncRows[0].inserted_count),
+          updatedCount: Number(catalogSyncRows[0].updated_count)
+        },
     users: Array.from(users.values()),
     audit: auditRows.map((row) => ({
       id: row.id,
@@ -354,13 +383,17 @@ const createUser = async (database, adminEmail, payload) => {
 const validateAssignmentsExist = async (database, manualAccess) => {
   const [productsResult, talentsResult] = await database.batch([
     database.prepare("SELECT id FROM products WHERE active = 1"),
-    database.prepare("SELECT id FROM talents WHERE active = 1")
+    database.prepare(`
+      SELECT id, talent_code
+      FROM talents
+      WHERE active = 1 AND catalog_active = 1
+    `)
   ]);
   const productIds = new Set(
     (productsResult.results ?? []).map((row) => row.id)
   );
-  const talentIds = new Set(
-    (talentsResult.results ?? []).map((row) => row.id)
+  const talents = new Map(
+    (talentsResult.results ?? []).map((row) => [row.id, row])
   );
 
   for (const access of manualAccess) {
@@ -369,8 +402,15 @@ const validateAssignmentsExist = async (database, manualAccess) => {
     }
 
     for (const talentId of access.talentIds) {
-      if (!talentIds.has(talentId)) {
+      const talent = talents.get(talentId);
+      if (!talent) {
         throw new HttpError(400, `Talent '${talentId}' is not active.`);
+      }
+      if (access.productId === "youtube-analytics" && !talent.talent_code) {
+        throw new HttpError(
+          400,
+          `Talent '${talentId}' is not mapped to the DuckDB dashboard catalog.`
+        );
       }
     }
   }
@@ -467,12 +507,19 @@ const createTalent = async (database, adminEmail, payload) => {
 
 const updateTalent = async (database, adminEmail, talentId, payload) => {
   const current = await database
-    .prepare("SELECT id, display_name FROM talents WHERE id = ?")
+    .prepare("SELECT id, display_name, talent_code FROM talents WHERE id = ?")
     .bind(talentId)
     .first();
 
   if (!current) {
     throw new HttpError(404, "Talent not found.");
+  }
+
+  if (current.talent_code && payload.displayName !== current.display_name) {
+    throw new HttpError(
+      409,
+      "Catalog-managed talent names come from DuckDB and cannot be renamed here."
+    );
   }
 
   await database.batch([
@@ -546,6 +593,7 @@ const deleteTalent = async (database, adminEmail, talentId) => {
     SELECT
       talents.id,
       talents.display_name,
+      talents.talent_code,
       (SELECT COUNT(*) FROM talent_access WHERE talent_id = talents.id)
         AS manual_assignment_count,
       (SELECT COUNT(*) FROM permission_grants WHERE talent_id = talents.id)
@@ -556,6 +604,13 @@ const deleteTalent = async (database, adminEmail, talentId) => {
 
   if (!current) {
     throw new HttpError(404, "Talent not found.");
+  }
+
+  if (current.talent_code) {
+    throw new HttpError(
+      409,
+      "Catalog-managed talents cannot be deleted here. Deactivate the talent or update the DuckDB catalog instead."
+    );
   }
 
   if (Number(current.managed_grant_count) > 0) {

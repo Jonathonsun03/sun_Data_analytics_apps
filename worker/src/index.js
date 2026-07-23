@@ -5,6 +5,9 @@ import {
 } from "./admin.js";
 
 const jwksByTeamDomain = new Map();
+const DEFAULT_DASHBOARD_HOSTNAME = "dashboard.sun-dataanalytics.com";
+const VERIFIED_EMAIL_HEADER = "X-SDA-Verified-Email";
+const ALLOWED_TALENT_CODES_HEADER = "X-SDA-Allowed-Talent-Codes";
 
 const jsonResponse = (body, status = 200, extraHeaders = {}) =>
   Response.json(body, {
@@ -32,6 +35,12 @@ const configuredAdminEmail = (env) => normalizedEmail(env.ADMIN_EMAIL);
 const isAdminEmail = (email, env) =>
   Boolean(configuredAdminEmail(env)) &&
   normalizedEmail(email) === configuredAdminEmail(env);
+
+const configuredDashboardHostname = (env) =>
+  (env.DASHBOARD_HOSTNAME?.trim().toLowerCase() || DEFAULT_DASHBOARD_HOSTNAME);
+
+const isDashboardRequest = (url, env) =>
+  url.hostname.toLowerCase() === configuredDashboardHostname(env);
 
 const getJwks = (teamDomain) => {
   if (!jwksByTeamDomain.has(teamDomain)) {
@@ -114,7 +123,8 @@ const productsForEmail = async (database, email) => {
       products.url AS product_url,
       deduplicated_access.role AS product_role,
       talents.id AS talent_id,
-      talents.display_name AS talent_name
+      talents.display_name AS talent_name,
+      talents.talent_code AS talent_code
     FROM users
     INNER JOIN deduplicated_access
       ON deduplicated_access.user_id = users.id
@@ -124,6 +134,7 @@ const productsForEmail = async (database, email) => {
     LEFT JOIN talents
       ON talents.id = deduplicated_access.talent_id
       AND talents.active = 1
+      AND talents.catalog_active = 1
     WHERE users.email = ? COLLATE NOCASE
       AND users.active = 1
       AND (
@@ -150,6 +161,7 @@ const productsForEmail = async (database, email) => {
       products.get(row.product_id).permissions.push({
         type: "talent",
         id: row.talent_id,
+        code: row.talent_code,
         label: row.talent_name
       });
     }
@@ -158,12 +170,104 @@ const productsForEmail = async (database, email) => {
   return Array.from(products.values());
 };
 
+const dashboardTalentCodesForEmail = async (database, email) => {
+  const result = await database.prepare(`
+    WITH effective_access AS (
+      SELECT
+        users.id AS user_id,
+        product_access.product_id,
+        talent_access.talent_id
+      FROM users
+      INNER JOIN product_access
+        ON product_access.user_id = users.id
+      INNER JOIN talent_access
+        ON talent_access.user_id = users.id
+        AND talent_access.product_id = product_access.product_id
+
+      UNION ALL
+
+      SELECT
+        permission_grants.user_id,
+        permission_grants.product_id,
+        permission_grants.talent_id
+      FROM permission_grants
+      WHERE permission_grants.active = 1
+        AND permission_grants.talent_id IS NOT NULL
+        AND (
+          permission_grants.access_start_date IS NULL
+          OR permission_grants.access_start_date <= date('now')
+        )
+        AND (
+          permission_grants.access_end_date IS NULL
+          OR permission_grants.access_end_date >= date('now')
+        )
+    )
+    SELECT DISTINCT talents.talent_code
+    FROM users
+    INNER JOIN effective_access
+      ON effective_access.user_id = users.id
+      AND effective_access.product_id = 'youtube-analytics'
+    INNER JOIN products
+      ON products.id = effective_access.product_id
+      AND products.active = 1
+    INNER JOIN talents
+      ON talents.id = effective_access.talent_id
+      AND talents.active = 1
+      AND talents.catalog_active = 1
+      AND talents.talent_code IS NOT NULL
+    WHERE users.email = ? COLLATE NOCASE
+      AND users.active = 1
+    ORDER BY talents.talent_code
+  `).bind(email).all();
+
+  return (result.results ?? []).map((row) => row.talent_code);
+};
+
+const forwardDashboardRequest = async (
+  request,
+  database,
+  email,
+  fetcher = fetch
+) => {
+  const talentCodes = await dashboardTalentCodesForEmail(database, email);
+  if (talentCodes.length === 0) {
+    return new Response(
+      "No active Youtube Analytics talent permissions were found for this account.",
+      {
+        status: 403,
+        headers: {
+          "Cache-Control": "no-store",
+          "Content-Type": "text/plain; charset=utf-8",
+          "X-Content-Type-Options": "nosniff"
+        }
+      }
+    );
+  }
+
+  const headers = new Headers(request.headers);
+  headers.delete(VERIFIED_EMAIL_HEADER);
+  headers.delete(ALLOWED_TALENT_CODES_HEADER);
+  headers.set(VERIFIED_EMAIL_HEADER, email);
+  headers.set(ALLOWED_TALENT_CODES_HEADER, talentCodes.join(","));
+
+  const proxiedRequest = new Request(request, {
+    headers,
+    redirect: "manual"
+  });
+  return await fetcher(proxiedRequest);
+};
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const isAdminRoute = url.pathname.startsWith("/api/admin/");
+    const isDashboardRoute = isDashboardRequest(url, env);
 
-    if (url.pathname !== "/api/my-products" && !isAdminRoute) {
+    if (
+      !isDashboardRoute &&
+      url.pathname !== "/api/my-products" &&
+      !isAdminRoute
+    ) {
       return jsonResponse({ error: "Not found" }, 404);
     }
 
@@ -206,6 +310,29 @@ export default {
       return handleAdminRequest(request, env.DB, url, email);
     }
 
+    if (isDashboardRoute) {
+      try {
+        return await forwardDashboardRequest(request, env.DB, email);
+      } catch (error) {
+        console.error(
+          JSON.stringify({
+            event: "permissions.dashboard_proxy_failed",
+            host: url.hostname,
+            path: url.pathname,
+            error: error instanceof Error ? error.message : String(error)
+          })
+        );
+        return new Response("Dashboard authorization is temporarily unavailable.", {
+          status: 503,
+          headers: {
+            "Cache-Control": "no-store",
+            "Content-Type": "text/plain; charset=utf-8",
+            "X-Content-Type-Options": "nosniff"
+          }
+        });
+      }
+    }
+
     if (request.method !== "GET") {
       return jsonResponse(
         { error: "Method not allowed" },
@@ -236,4 +363,10 @@ export default {
   }
 };
 
-export { configuredAdminEmail, isAdminEmail };
+export {
+  configuredAdminEmail,
+  dashboardTalentCodesForEmail,
+  forwardDashboardRequest,
+  isAdminEmail,
+  isDashboardRequest
+};

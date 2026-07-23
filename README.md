@@ -179,6 +179,54 @@ npm run worker:deploy
 
 The route is `apps.sun-dataanalytics.com/api/*`; all other requests continue to GitHub Pages. This Cloudflare-hosted Worker and D1 design does not require a new Cloudflare Tunnel.
 
+## DuckDB talent catalog mapping
+
+D1 remains authoritative for client accounts and entitlements. The analytical
+DuckDB database remains authoritative only for the dashboard talent catalog and
+its exact `talent_code` values. Migration
+`0004_duckdb_talent_catalog.sql` adds that code and catalog-sync metadata to D1.
+
+The maintained command lives in the analysis repository:
+
+```bash
+cd /srv/projects/Sun_Data_Analytics_Analyze_Talent_Data
+.venv/bin/python py_scripts/run/sync_d1_talent_catalog.py
+.venv/bin/python py_scripts/run/sync_d1_talent_catalog.py --apply
+```
+
+The first command is read-only. The apply command is idempotent and changes only
+talent catalog rows; it never grants or revokes client access. Catalog-managed
+talents display their DuckDB code in the admin page and cannot be renamed or
+deleted there. They can be deactivated. Manual talents remain available for
+products that do not need a DuckDB mapping.
+
+## Dashboard authorization proxy
+
+The Worker contains a dormant dashboard-host branch for
+`dashboard.sun-dataanalytics.com`. After the Shiny origin is connected through
+Cloudflare Tunnel, activate it by completing all of these infrastructure steps:
+
+1. Create the Tunnel public hostname for `dashboard.sun-dataanalytics.com`
+   pointing at the local Shiny service.
+2. Create a Cloudflare Access self-hosted application for that hostname and
+   append its Access Audience tag to the comma-separated `POLICY_AUD` Worker
+   variable.
+3. Add `dashboard.sun-dataanalytics.com/*` as a second Worker route in
+   `wrangler.jsonc`, then deploy the Worker.
+4. Ensure the Tunnel is the only public path to the Shiny origin.
+
+On every dashboard request, the Worker verifies the Access JWT, looks up active
+Youtube Analytics assignments in D1, replaces any client-supplied entitlement
+headers, and forwards only these trusted headers to Shiny:
+
+- `X-SDA-Verified-Email`
+- `X-SDA-Allowed-Talent-Codes`
+
+The Shiny server intersects those exact codes with its local DuckDB catalog and
+uses only the resulting talent list. An account with no active mapped talents
+receives HTTP 403 before the request reaches Shiny. The dashboard also fails
+closed when the trusted headers are absent in production mode.
+
 ## Permission administration
 
 The rendered admin page is:
@@ -226,7 +274,10 @@ JWT issued for either the launcher or admin application.
   product and talent assignments.
 - Replace that client's manual product and talent assignments in one atomic D1
   batch.
-- Add, rename, activate, or deactivate talents.
+- Add, rename, activate, or deactivate manually managed talents.
+- Display DuckDB-synchronized talent codes and the latest catalog-sync status.
+- Activate or deactivate catalog-managed talents without allowing their mapped
+  name or code to drift from DuckDB.
 - Permanently delete a manually managed talent and remove it from manual client
   assignments.
 - Display source-owned grants such as future payment integrations without

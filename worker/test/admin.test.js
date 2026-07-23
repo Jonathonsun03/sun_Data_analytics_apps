@@ -216,3 +216,22 @@ test("source-owned grants prevent permanent deletion", async () => {
   );
   assert.equal(talentDatabase.batches.length, 0);
 });
+
+
+test("DuckDB catalog talents cannot be permanently deleted", async () => {
+  const database = fakeDatabase({
+    talent: {
+      id: "leia-memoria",
+      display_name: "Leia Memoria",
+      talent_code: "LEI3",
+      manual_assignment_count: 2,
+      managed_grant_count: 0
+    }
+  });
+
+  await assert.rejects(
+    deleteTalent(database, "admin@example.com", "leia-memoria"),
+    /Catalog-managed talents cannot be deleted/
+  );
+  assert.equal(database.batches.length, 0);
+});
