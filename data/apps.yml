@@ -7,7 +7,7 @@ apps:
   - id: youtube-analytics
     title: Youtube Analytics
     description: Review creator performance, content strategy, publishing patterns, and audience data.
-    url: https://dashboard.sun-dataanalytics.com
+    url: https://yt-dashboard.sun-dataanalytics.com/
     status: available
     action: Open application
 
