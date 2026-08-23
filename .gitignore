@@ -3,14 +3,6 @@
 .env.*
 !.env.example
 
-# Quarto render output and local caches
-_site/
-.quarto/
-.quarto-cache*/
-*_cache/
-*_files/
-*.knit.md
-
 # R / R Markdown local state
 .Rhistory
 .RData
@@ -19,10 +11,6 @@ _site/
 # System files
 .DS_Store
 Thumbs.db
-
-**/*.quarto_ipynb
-
-/.quarto/
 
 # Cloudflare Worker local state and dependencies
 node_modules/

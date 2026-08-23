@@ -1,7 +1,7 @@
 # Add one complete six-field block per tile; tile order matches file order.
 # IDs must be unique lowercase slugs. URLs must be complete HTTPS URLs.
 # Use status "available" for a link or "coming-soon" for a disabled tile.
-# Run `quarto render` after editing to validate the catalog.
+# Run `quarto render site` from the repository root after editing to validate the catalog.
 
 apps:
   - id: youtube-analytics

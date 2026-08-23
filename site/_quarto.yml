@@ -1,6 +1,9 @@
 project:
   type: website
   output-dir: _site
+  render:
+    - index.qmd
+    - admin.qmd
 
 website:
   title: "Sun Data Analytics Apps"

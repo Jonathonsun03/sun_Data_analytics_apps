@@ -1,0 +1,8 @@
+# Quarto render output and local caches
+/_site/
+/.quarto/
+/.quarto-cache*/
+/*_cache/
+/*_files/
+*.knit.md
+**/*.quarto_ipynb
