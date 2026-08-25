@@ -187,13 +187,13 @@ if (length(apps) == 0) {
   cat('<p class="app-empty">No applications are configured yet.</p>')
 } else {
   cat('<ul class="app-grid" aria-label="Available applications">\n')
-  cat('<li class="my-products-item">\n')
-  cat('<article class="app-tile my-products-tile" data-my-products aria-live="polite">\n')
+  cat('<li>\n')
+  cat('<a class="app-tile products-tile" href="products.html">\n')
   cat('<span class="app-status">Your access</span>\n')
-  cat('<h3>My Products</h3>\n')
-  cat('<p data-products-message>Loading your assigned products and permissions...</p>\n')
-  cat('<div class="my-products-list" data-products-list hidden></div>\n')
-  cat('</article>\n')
+  cat('<h3>Products</h3>\n')
+  cat('<p>Review the products assigned to your account.</p>\n')
+  cat('<span class="app-action">View products →</span>\n')
+  cat('</a>\n')
   cat('</li>\n')
 
   for (app in apps) {

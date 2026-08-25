@@ -3,6 +3,7 @@ project:
   output-dir: _site
   render:
     - index.qmd
+    - products.qmd
     - admin.qmd
 
 website:

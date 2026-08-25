@@ -1,0 +1,43 @@
+---
+title: "Products"
+description: "Review the products and permissions assigned to your account."
+format:
+  html:
+    include-in-header:
+      text: |
+        <meta name="robots" content="noindex, nofollow, noarchive">
+    include-after-body:
+      text: |
+        <script src="assets/js/access-identity.js"></script>
+        <script src="assets/js/my-products.js"></script>
+---
+
+::: {.portal-intro}
+
+## Your product access
+
+See which products are assigned to your account and what you can access within each product.
+
+<div class="access-account" hidden>
+  <span>Signed in as <strong data-access-email></strong></span>
+  <span><a href="index.html">Back to applications</a> · <a href="/cdn-cgi/access/logout">Sign out</a></span>
+</div>
+
+:::
+
+```{=html}
+<section class="products-access" data-my-products aria-live="polite">
+  <p class="products-access-message" data-products-message>
+    Loading your assigned products and permissions...
+  </p>
+  <div class="products-access-list" data-products-list hidden></div>
+</section>
+```
+
+::: {.portal-support}
+
+### Need help with access?
+
+Contact [Sun Data Analytics](mailto:jonathon@sun-dataanalytics.com) if a product or permission is missing from your account.
+
+:::

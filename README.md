@@ -8,6 +8,7 @@ A Quarto-based application launcher intended for `apps.sun-dataanalytics.com` an
 site/                    # Self-contained Quarto website project
   _quarto.yml            # Website configuration and render targets
   index.qmd              # Application launcher page
+  products.qmd           # Signed-in user's product and permission details
   admin.qmd              # Permission administration page
   assets/                # Browser JavaScript and site images
   css/                   # Site stylesheet entrypoint and modules
@@ -43,7 +44,10 @@ User
   -> separately protected application hostname
 ```
 
-Cloudflare Access is the outer security boundary. The launcher presents only products returned by the permissions service, while every linked product must still enforce its own authorization.
+Cloudflare Access is the outer security boundary. The launcher presents only
+products returned by the permissions service, while every linked product must
+still enforce its own authorization. The Products tile links to a separate page
+showing the signed-in user's product and permission details.
 
 ## Permission architecture
 
@@ -53,7 +57,7 @@ Cloudflare Access login
   -> /api/my-products Worker route
   -> Access JWT signature, issuer, and audience validation
   -> D1 entitlement query by verified email
-  -> My Products summary and filtered launcher tiles
+  -> Products page and filtered launcher tiles
 ```
 
 The Worker source is in `worker/src/index.js`. D1 stores users, products, talents, manual access, and source-owned permission grants. The API derives the email only from a validated `Cf-Access-Jwt-Assertion` header and never accepts an email supplied by the browser.
@@ -94,7 +98,9 @@ To add a tile, copy one complete six-field block and change its values. To edit
 a tile, change only the intended values. To remove a tile, delete its complete
 block. Tile order on the page matches the order in `site/data/apps.yml`.
 
-`My Products` is generated dynamically from D1 and must not be added to `apps.yml`. Keep `apps.yml` for shared product metadata only; user emails and assignments belong in D1.
+The `Products` tile and its detail page are generated separately from D1 and
+must not be added to `apps.yml`. Keep `apps.yml` for shared product metadata
+only; user emails and assignments belong in D1.
 
 Preserve the YAML structure:
 
@@ -338,7 +344,7 @@ interpolation.
 3. Run `npm run worker:deploy`.
 4. Publish the Quarto site through the existing `main` branch workflow.
 5. Visit `/admin.html`, add a test client, grant one product/talent, and confirm
-   the client's My Products tile shows the same assignment.
+   the client's Products page shows the same assignment.
 
 This page does not edit Cloudflare Access policies. If the launcher Access policy
 contains an explicit email allowlist, the new client must also be added there
