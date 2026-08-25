@@ -8,6 +8,7 @@
     "[::1]"
   ]);
   const productItems = Array.from(document.querySelectorAll("[data-product-id]"));
+  const adminItem = document.querySelector("[data-admin-tile]");
   const productsAccess = document.querySelector("[data-my-products]");
   const message = productsAccess?.querySelector("[data-products-message]");
   const productList = productsAccess?.querySelector("[data-products-list]");
@@ -34,6 +35,10 @@
     productItems.forEach((item) => {
       item.toggleAttribute("hidden", !allowedIds.has(item.dataset.productId));
     });
+  };
+
+  const showAdminTile = (isAdmin) => {
+    adminItem?.toggleAttribute("hidden", !isAdmin);
   };
 
   const renderProducts = (products) => {
@@ -109,10 +114,12 @@
       const products = Array.isArray(payload.products) ? payload.products : [];
       const allowedIds = new Set(products.map((product) => product.id));
       showAllowedProducts(allowedIds);
+      showAdminTile(payload.user?.isAdmin === true);
       renderProducts(products);
     })
     .catch(() => {
       showAllowedProducts(new Set());
+      showAdminTile(false);
 
       if (message && productList) {
         message.textContent =
