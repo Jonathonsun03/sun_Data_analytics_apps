@@ -1,3 +1,4 @@
+// Filters launcher tiles and renders the signed-in user's Products page.
 (() => {
   const localPreviewHosts = new Set([
     "localhost",
