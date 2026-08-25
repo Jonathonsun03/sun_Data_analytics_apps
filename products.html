@@ -6,9 +6,9 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="description" content="Select an application to open it.">
+<meta name="description" content="Review the products and permissions assigned to your account.">
 
-<title>Applications – Sun Data Analytics Apps</title>
+<title>Products – Sun Data Analytics Apps</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -122,12 +122,12 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Applications</h1>
+<h1 class="title">Products</h1>
 </div>
 
 <div>
   <div class="description">
-    Select an application to open it.
+    Review the products and permissions assigned to your account.
   </div>
 </div>
 
@@ -144,52 +144,22 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<section id="your-applications" class="level2 portal-intro">
-<h2 class="anchored" data-anchor-id="your-applications">Your applications</h2>
-<p>Select a product below. Access to each product is controlled separately through Cloudflare Access.</p>
+<section id="your-product-access" class="level2 portal-intro">
+<h2 class="anchored" data-anchor-id="your-product-access">Your product access</h2>
+<p>See which products are assigned to your account and what you can access within each product.</p>
 <div class="access-account" hidden="">
-<p><span>Signed in as <strong data-access-email=""></strong></span> <a href="./cdn-cgi/access/logout">Sign out</a></p>
+<p><span>Signed in as <strong data-access-email=""></strong></span> <span><a href="index.html">Back to applications</a> · <a href="./cdn-cgi/access/logout">Sign out</a></span></p>
 </div>
 </section>
-<div class="app-launcher">
-<ul class="app-grid" aria-label="Available applications">
-<li>
-<a class="app-tile products-tile" href="products.html"> <span class="app-status">Your access</span>
-<h3 class="anchored">
-Products
-</h3>
-<p>
-Review the products assigned to your account.
-</p>
-<span class="app-action">View products →</span> </a>
-</li>
-<li data-product-id="youtube-analytics" hidden="">
-<a class="app-tile" href="https://yt-dashboard.sun-dataanalytics.com/"> <span class="app-status">Available</span>
-<h3 class="anchored">
-Youtube Analytics
-</h3>
-<p>
-Review creator performance, content strategy, publishing patterns, and audience data.
-</p>
-<span class="app-action">Open application →</span> </a>
-</li>
-<li data-product-id="news-tracker" hidden="">
-<article class="app-tile app-tile--disabled" aria-disabled="true">
-<span class="app-status">Coming soon</span>
-<h3 class="anchored">
-Media News Tracker
-</h3>
-<p>
-Track industry coverage, entities, themes, and relationships across media reporting.
-</p>
-<span class="app-action">Coming soon</span>
-</article>
-</li>
-</ul>
-</div>
+<section class="products-access" data-my-products="" aria-live="polite">
+  <p class="products-access-message" data-products-message="">
+    Loading your assigned products and permissions...
+  </p>
+  <div class="products-access-list" data-products-list="" hidden=""></div>
+</section>
 <section id="need-help-with-access" class="level3 portal-support">
 <h3 class="anchored" data-anchor-id="need-help-with-access">Need help with access?</h3>
-<p>Contact <a href="mailto:jonathon@sun-dataanalytics.com">Sun Data Analytics</a> if an application is missing or you cannot open a product assigned to your account.</p>
+<p>Contact <a href="mailto:jonathon@sun-dataanalytics.com">Sun Data Analytics</a> if a product or permission is missing from your account.</p>
 </section>
 
 

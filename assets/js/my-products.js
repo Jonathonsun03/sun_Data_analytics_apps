@@ -7,18 +7,21 @@
     "[::1]"
   ]);
   const productItems = Array.from(document.querySelectorAll("[data-product-id]"));
-  const summary = document.querySelector("[data-my-products]");
-  const message = summary?.querySelector("[data-products-message]");
-  const productList = summary?.querySelector("[data-products-list]");
+  const productsAccess = document.querySelector("[data-my-products]");
+  const message = productsAccess?.querySelector("[data-products-message]");
+  const productList = productsAccess?.querySelector("[data-products-list]");
 
-  if (!summary || !message || !productList) {
+  if (productItems.length === 0 && (!productsAccess || !message || !productList)) {
     return;
   }
 
   const showLocalPreview = () => {
     productItems.forEach((item) => item.removeAttribute("hidden"));
-    message.textContent =
-      "Permission details load after Cloudflare Access authentication in the deployed launcher.";
+
+    if (message) {
+      message.textContent =
+        "Product access details load after Cloudflare Access authentication in the deployed site.";
+    }
   };
 
   if (localPreviewHosts.has(globalThis.location.hostname)) {
@@ -33,23 +36,39 @@
   };
 
   const renderProducts = (products) => {
+    if (!message || !productList) {
+      return;
+    }
+
     productList.replaceChildren();
 
     for (const product of products) {
-      const section = document.createElement("section");
-      section.className = "my-product";
+      const article = document.createElement("article");
+      article.className = "product-access-card";
+
+      const headingRow = document.createElement("div");
+      headingRow.className = "product-access-heading";
 
       const heading = document.createElement("h4");
       heading.textContent = product.title;
-      section.appendChild(heading);
+      headingRow.appendChild(heading);
+
+      if (typeof product.url === "string" && product.url.startsWith("https://")) {
+        const productLink = document.createElement("a");
+        productLink.href = product.url;
+        productLink.textContent = "Open product →";
+        headingRow.appendChild(productLink);
+      }
+
+      article.appendChild(headingRow);
 
       const label = document.createElement("div");
-      label.className = "my-product-label";
-      label.textContent = "Permissions";
-      section.appendChild(label);
+      label.className = "product-access-label";
+      label.textContent = "You have access to";
+      article.appendChild(label);
 
       const permissions = document.createElement("ul");
-      permissions.className = "my-product-permissions";
+      permissions.className = "product-access-permissions";
 
       if (product.permissions.length === 0) {
         const item = document.createElement("li");
@@ -63,8 +82,8 @@
         }
       }
 
-      section.appendChild(permissions);
-      productList.appendChild(section);
+      article.appendChild(permissions);
+      productList.appendChild(article);
     }
 
     message.toggleAttribute("hidden", products.length > 0);
@@ -93,8 +112,11 @@
     })
     .catch(() => {
       showAllowedProducts(new Set());
-      message.textContent =
-        "Your permissions could not be loaded. Contact Sun Data Analytics for assistance.";
-      productList.setAttribute("hidden", "");
+
+      if (message && productList) {
+        message.textContent =
+          "Your permissions could not be loaded. Contact Sun Data Analytics for assistance.";
+        productList.setAttribute("hidden", "");
+      }
     });
 })();
