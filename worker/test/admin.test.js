@@ -9,7 +9,11 @@ import {
   talentIdForName,
   validateUserUpdatePayload
 } from "../src/admin.js";
-import { configuredAdminEmail, isAdminEmail } from "../src/index.js";
+import {
+  configuredAdminEmail,
+  isAdminEmail,
+  launcherUserForEmail
+} from "../src/index.js";
 
 const fakeDatabase = ({ user = null, talent = null } = {}) => {
   const batches = [];
@@ -48,6 +52,23 @@ test("admin email comparison uses the verified normalized address", () => {
   assert.equal(isAdminEmail("JONATHON@example.com", env), true);
   assert.equal(isAdminEmail("client@example.com", env), false);
   assert.equal(isAdminEmail("jonathon@example.com", {}), false);
+});
+
+test("launcher user exposes only the server-derived admin status", () => {
+  const env = { ADMIN_EMAIL: "admin@example.com" };
+
+  assert.deepEqual(launcherUserForEmail(" Admin@Example.com ", env), {
+    email: "admin@example.com",
+    isAdmin: true
+  });
+  assert.deepEqual(launcherUserForEmail("client@example.com", env), {
+    email: "client@example.com",
+    isAdmin: false
+  });
+  assert.deepEqual(launcherUserForEmail("admin@example.com", {}), {
+    email: "admin@example.com",
+    isAdmin: false
+  });
 });
 
 test("email normalization does not accept non-string values", () => {

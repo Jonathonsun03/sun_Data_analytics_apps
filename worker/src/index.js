@@ -6,6 +6,8 @@ import {
 
 const jwksByTeamDomain = new Map();
 const DEFAULT_DASHBOARD_HOSTNAME = "dashboard.sun-dataanalytics.com";
+const DASHBOARD_PRODUCT_ID = "youtube-analytics";
+const DASHBOARD_TALENT_CODE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$/;
 const VERIFIED_EMAIL_HEADER = "X-SDA-Verified-Email";
 const ALLOWED_TALENT_CODES_HEADER = "X-SDA-Allowed-Talent-Codes";
 
@@ -35,6 +37,11 @@ const configuredAdminEmail = (env) => normalizedEmail(env.ADMIN_EMAIL);
 const isAdminEmail = (email, env) =>
   Boolean(configuredAdminEmail(env)) &&
   normalizedEmail(email) === configuredAdminEmail(env);
+
+const launcherUserForEmail = (email, env) => ({
+  email: normalizedEmail(email),
+  isAdmin: isAdminEmail(email, env)
+});
 
 const configuredDashboardHostname = (env) =>
   (env.DASHBOARD_HOSTNAME?.trim().toLowerCase() || DEFAULT_DASHBOARD_HOSTNAME);
@@ -73,6 +80,57 @@ const authenticatedEmail = async (request, env) => {
   });
 
   return normalizedEmail(payload.email) || null;
+};
+
+const normalizedDashboardTalentCode = (value) => {
+  const code = typeof value === "string" ? value.trim() : "";
+  return DASHBOARD_TALENT_CODE_PATTERN.test(code) ? code : null;
+};
+
+const dashboardTalentCodesFromRows = (rows) =>
+  Array.from(
+    new Set(
+      rows
+        .map((row) => normalizedDashboardTalentCode(row.talent_code))
+        .filter(Boolean)
+    )
+  );
+
+const productsFromRows = (rows) => {
+  const products = new Map();
+
+  for (const row of rows) {
+    const isDashboardProduct = row.product_id === DASHBOARD_PRODUCT_ID;
+    const dashboardTalentCode = normalizedDashboardTalentCode(row.talent_code);
+    const hasUsableDashboardTalent = Boolean(
+      row.talent_id && dashboardTalentCode
+    );
+
+    if (isDashboardProduct && !hasUsableDashboardTalent) {
+      continue;
+    }
+
+    if (!products.has(row.product_id)) {
+      products.set(row.product_id, {
+        id: row.product_id,
+        title: row.product_title,
+        url: row.product_url,
+        role: row.product_role,
+        permissions: []
+      });
+    }
+
+    if (row.talent_id) {
+      products.get(row.product_id).permissions.push({
+        type: "talent",
+        id: row.talent_id,
+        code: isDashboardProduct ? dashboardTalentCode : row.talent_code,
+        label: row.talent_name
+      });
+    }
+  }
+
+  return Array.from(products.values());
 };
 
 const productsForEmail = async (database, email) => {
@@ -144,30 +202,7 @@ const productsForEmail = async (database, email) => {
     ORDER BY products.title, talents.display_name
   `;
   const result = await database.prepare(query).bind(email).all();
-  const products = new Map();
-
-  for (const row of result.results ?? []) {
-    if (!products.has(row.product_id)) {
-      products.set(row.product_id, {
-        id: row.product_id,
-        title: row.product_title,
-        url: row.product_url,
-        role: row.product_role,
-        permissions: []
-      });
-    }
-
-    if (row.talent_id) {
-      products.get(row.product_id).permissions.push({
-        type: "talent",
-        id: row.talent_id,
-        code: row.talent_code,
-        label: row.talent_name
-      });
-    }
-  }
-
-  return Array.from(products.values());
+  return productsFromRows(result.results ?? []);
 };
 
 const dashboardTalentCodesForEmail = async (database, email) => {
@@ -206,7 +241,7 @@ const dashboardTalentCodesForEmail = async (database, email) => {
     FROM users
     INNER JOIN effective_access
       ON effective_access.user_id = users.id
-      AND effective_access.product_id = 'youtube-analytics'
+      AND effective_access.product_id = ?
     INNER JOIN products
       ON products.id = effective_access.product_id
       AND products.active = 1
@@ -218,9 +253,9 @@ const dashboardTalentCodesForEmail = async (database, email) => {
     WHERE users.email = ? COLLATE NOCASE
       AND users.active = 1
     ORDER BY talents.talent_code
-  `).bind(email).all();
+  `).bind(DASHBOARD_PRODUCT_ID, email).all();
 
-  return (result.results ?? []).map((row) => row.talent_code);
+  return dashboardTalentCodesFromRows(result.results ?? []);
 };
 
 const forwardDashboardRequest = async (
@@ -344,7 +379,7 @@ export default {
     try {
       const products = await productsForEmail(env.DB, email);
       return jsonResponse({
-        user: { email },
+        user: launcherUserForEmail(email, env),
         products
       });
     } catch (error) {
@@ -368,5 +403,7 @@ export {
   dashboardTalentCodesForEmail,
   forwardDashboardRequest,
   isAdminEmail,
-  isDashboardRequest
+  isDashboardRequest,
+  launcherUserForEmail,
+  productsFromRows
 };

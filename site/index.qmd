@@ -196,6 +196,15 @@ if (length(apps) == 0) {
   cat('</a>\n')
   cat('</li>\n')
 
+  cat('<li data-admin-tile hidden>\n')
+  cat('<a class="app-tile admin-access-tile" href="admin.html">\n')
+  cat('<span class="app-status">Administrator</span>\n')
+  cat('<h3>Administration</h3>\n')
+  cat('<p>Manage client product and talent access.</p>\n')
+  cat('<span class="app-action">Open administration →</span>\n')
+  cat('</a>\n')
+  cat('</li>\n')
+
   for (app in apps) {
     title <- escape_html(app$title %||% "Application")
     description <- escape_html(app$description %||% "")

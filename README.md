@@ -102,6 +102,11 @@ The `Products` tile and its detail page are generated separately from D1 and
 must not be added to `apps.yml`. Keep `apps.yml` for shared product metadata
 only; user emails and assignments belong in D1.
 
+The `Administration` tile is also generated separately. The Worker derives its
+visibility from the verified Access identity and returns only an `isAdmin`
+boolean. Do not hardcode the administrator email in site HTML or browser
+JavaScript, and do not add the administration page to `apps.yml`.
+
 Preserve the YAML structure:
 
 - Keep `apps:` at the left margin.
@@ -251,6 +256,15 @@ uses only the resulting talent list. An account with no active mapped talents
 receives HTTP 403 before the request reaches Shiny. The dashboard also fails
 closed when the trusted headers are absent in production mode.
 
+The launcher, Products page, dashboard proxy, and dashboard talent dropdown all
+use this same rule for Youtube Analytics: the user and product must be active,
+and at least one assigned talent must be active, catalog-active, and mapped to a
+non-empty DuckDB `talent_code`. The launcher omits the Youtube Analytics tile
+when that rule is not met, the Products page lists only those mapped talents,
+and the dashboard dropdown is populated from the exact codes forwarded by the
+proxy. Product-level access without a mapped talent remains valid for products
+that do not use the talent dashboard.
+
 ## Permission administration
 
 The rendered admin page is:
@@ -277,6 +291,13 @@ Cloudflare Access login
 
 The email comparison happens inside the Worker on every admin API request. The
 page being hidden or difficult to guess is not treated as security.
+
+The launcher also compares the verified email with `ADMIN_EMAIL` on the server
+and returns an `isAdmin` boolean from `/api/my-products`. Browser JavaScript
+shows the Administration tile only when that value is exactly `true`. This is a
+navigation convenience; the Access policy and admin API authorization remain
+the security controls. The administrator does not need a D1 product assignment
+for this tile, and the Administration tile must not be added to `apps.yml`.
 
 For defense in depth, create a more-specific Cloudflare Access self-hosted
 application or policy covering both:
@@ -426,6 +447,8 @@ This browser-side identity display is informational only. It must not be used to
 - [ ] Apply all pending migrations remotely, including the audit table.
 - [ ] Set `TEAM_DOMAIN`, `POLICY_AUD`, and `ADMIN_EMAIL` on the Worker.
 - [ ] Deploy the Worker before using the admin page.
+- [ ] Confirm the configured administrator sees the Administration tile.
+- [ ] Confirm a non-administrator does not see the Administration tile.
 - [ ] Add reviewed production users, talents, and assignments through `/admin.html`.
 - [ ] Confirm a non-admin receives `403` from `/api/admin/state`.
 - [ ] Confirm admin mutations create rows in `permission_audit_log`.

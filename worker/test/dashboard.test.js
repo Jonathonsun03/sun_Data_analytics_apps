@@ -4,7 +4,8 @@ import test from "node:test";
 import {
   dashboardTalentCodesForEmail,
   forwardDashboardRequest,
-  isDashboardRequest
+  isDashboardRequest,
+  productsFromRows
 } from "../src/index.js";
 
 const talentDatabase = (codes) => ({
@@ -41,10 +42,83 @@ test("dashboard host matching uses the configured hostname", () => {
 });
 
 test("dashboard entitlements return exact DuckDB talent codes", async () => {
-  const database = talentDatabase(["AVA1", "LEI3"]);
+  const database = talentDatabase(["AVA1", " LEI3 ", "bad code", ""]);
   assert.deepEqual(
     await dashboardTalentCodesForEmail(database, "client@example.com"),
     ["AVA1", "LEI3"]
+  );
+});
+
+test("launcher dashboard access uses the same mapped talent requirement", () => {
+  const products = productsFromRows([
+    {
+      product_id: "youtube-analytics",
+      product_title: "Youtube Analytics",
+      product_url: "https://yt-dashboard.sun-dataanalytics.com/",
+      product_role: "viewer",
+      talent_id: null,
+      talent_name: null,
+      talent_code: null
+    },
+    {
+      product_id: "youtube-analytics",
+      product_title: "Youtube Analytics",
+      product_url: "https://yt-dashboard.sun-dataanalytics.com/",
+      product_role: "viewer",
+      talent_id: "talent-ava",
+      talent_name: "Avaritia Hawthorne",
+      talent_code: "AVA1"
+    },
+    {
+      product_id: "news-tracker",
+      product_title: "Media News Tracker",
+      product_url: "https://news.sun-dataanalytics.com/",
+      product_role: "viewer",
+      talent_id: null,
+      talent_name: null,
+      talent_code: null
+    }
+  ]);
+
+  assert.deepEqual(products, [
+    {
+      id: "youtube-analytics",
+      title: "Youtube Analytics",
+      url: "https://yt-dashboard.sun-dataanalytics.com/",
+      role: "viewer",
+      permissions: [
+        {
+          type: "talent",
+          id: "talent-ava",
+          code: "AVA1",
+          label: "Avaritia Hawthorne"
+        }
+      ]
+    },
+    {
+      id: "news-tracker",
+      title: "Media News Tracker",
+      url: "https://news.sun-dataanalytics.com/",
+      role: "viewer",
+      permissions: []
+    }
+  ]);
+});
+
+test("launcher hides Youtube Analytics without a usable talent code", () => {
+  assert.deepEqual(
+    productsFromRows([
+      {
+        product_id: "youtube-analytics",
+        product_title: "Youtube Analytics",
+        product_url: "https://yt-dashboard.sun-dataanalytics.com/",
+        product_role: "viewer",
+        talent_id: "unmapped-talent",
+        talent_name: "Unmapped Talent",
+        talent_code: null
+      }
+    ]),
+    []
   );
 });
 

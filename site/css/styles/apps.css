@@ -118,6 +118,10 @@
   border-top-color: var(--sda-navy);
 }
 
+.admin-access-tile {
+  border-top-color: var(--sda-navy);
+}
+
 .products-access {
   max-width: 1100px;
   margin-right: auto;
