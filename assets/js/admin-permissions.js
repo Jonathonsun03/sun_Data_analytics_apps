@@ -169,6 +169,15 @@
       });
     });
     fieldset.appendChild(talentGrid);
+
+    if (product.id === "youtube-analytics") {
+      const exportMirror = document.createElement("p");
+      exportMirror.className = "admin-panel-help";
+      exportMirror.textContent =
+        "Data Export mirrors these YouTube Analytics talent permissions automatically; there is no separate export permission to maintain.";
+      fieldset.appendChild(exportMirror);
+    }
+
     return fieldset;
   };
 
