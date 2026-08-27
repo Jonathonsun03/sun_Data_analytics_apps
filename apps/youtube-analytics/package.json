@@ -1,0 +1,16 @@
+{
+  "name": "sun-data-analytics-youtube-dashboard-prototype",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "observable preview",
+    "build": "observable build",
+    "observable": "observable"
+  },
+  "dependencies": {
+    "@observablehq/framework": "^1.13.4"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
