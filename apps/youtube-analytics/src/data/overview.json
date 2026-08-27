@@ -1,0 +1,33 @@
+{
+  "creator": "Prototype Creator",
+  "updated": "2026-08-27",
+  "window": "Jan 1 – Aug 27, 2026",
+  "metrics": [
+    {"label": "Total Views", "value": 12847320, "format": "compact", "change": 12.4},
+    {"label": "Total Revenue", "value": 45280, "format": "currency", "change": 8.7},
+    {"label": "Videos / Streams", "value": 684, "format": "integer", "change": 5.1},
+    {"label": "Average Views", "value": 18783, "format": "compact", "change": 6.8}
+  ],
+  "performance": [
+    {"month": "2026-01-01", "views": 1124000},
+    {"month": "2026-02-01", "views": 1249000},
+    {"month": "2026-03-01", "views": 1395000},
+    {"month": "2026-04-01", "views": 1476000},
+    {"month": "2026-05-01", "views": 1588000},
+    {"month": "2026-06-01", "views": 1713000},
+    {"month": "2026-07-01", "views": 1891000},
+    {"month": "2026-08-01", "views": 1611320}
+  ],
+  "contentEngagement": [
+    {"contentType": "Live", "averageViewPercentage": 38.2},
+    {"contentType": "Video", "averageViewPercentage": 52.6},
+    {"contentType": "Short", "averageViewPercentage": 81.4}
+  ],
+  "topVideos": [
+    {"title": "A Long-Form Video That Kept Growing", "type": "Video", "views": 486220, "averageViewPercentage": 62.8},
+    {"title": "Unexpected Collaboration Stream", "type": "Live", "views": 412740, "averageViewPercentage": 41.5},
+    {"title": "Short That Broke Out", "type": "Short", "views": 388510, "averageViewPercentage": 92.1},
+    {"title": "Evergreen Topic Follow-Up", "type": "Video", "views": 351880, "averageViewPercentage": 57.3},
+    {"title": "Community Event Stream", "type": "Live", "views": 319460, "averageViewPercentage": 45.9}
+  ]
+}
