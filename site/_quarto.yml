@@ -5,6 +5,7 @@ project:
     - index.qmd
     - products.qmd
     - admin.qmd
+    - pages/data_export.qmd
 
 website:
   title: "Sun Data Analytics Apps"
