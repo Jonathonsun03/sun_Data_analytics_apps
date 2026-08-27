@@ -1,0 +1,120 @@
+---
+title: "Data Export"
+description: "Download the raw and derived data available for your assigned YouTube Analytics talents."
+format:
+  html:
+    include-in-header:
+      text: |
+        <meta name="robots" content="noindex, nofollow, noarchive">
+    include-after-body:
+      text: |
+        <script src="../assets/js/access-identity.js"></script>
+        <script src="../assets/js/data-export.js"></script>
+---
+
+```{=html}
+<div class="admin-shell" data-data-export-root data-export-endpoint="">
+<section class="admin-intro" aria-label="Data export access">
+  <div class="admin-boundary-note" role="note">
+    <strong>Data Export mirrors YouTube Analytics access.</strong>
+    <span>Cloudflare Access verifies your identity, and the existing D1 talent assignments determine which creator data you can export.</span>
+  </div>
+
+  <div class="admin-session-card">
+    <div class="access-account" hidden>
+      <span>Signed in as <strong data-access-email></strong></span>
+      <span><a href="../index.html">Back to applications</a> · <a href="/cdn-cgi/access/logout">Sign out</a></span>
+    </div>
+
+    <div class="admin-notice" data-export-status role="status" aria-live="polite">
+      Verifying your Cloudflare Access identity and YouTube Analytics permissions...
+    </div>
+  </div>
+</section>
+
+<div class="products-access">
+  <section class="admin-panel" data-export-content hidden>
+    <div class="admin-panel-heading">
+      <div>
+        <span class="admin-eyebrow">Your data</span>
+        <h2>Build an export</h2>
+        <p class="admin-panel-help">
+          Choose from the talents already assigned to your account in YouTube Analytics.
+          Data Export does not maintain a separate permission list.
+        </p>
+      </div>
+    </div>
+
+    <form data-export-form>
+      <div class="admin-section-heading">
+        <div>
+          <h3>Talents</h3>
+          <p>Only currently active, DuckDB-mapped YouTube Analytics talents are available.</p>
+        </div>
+      </div>
+      <div class="admin-talent-grid" data-export-talents></div>
+
+      <div class="admin-section-heading">
+        <div>
+          <h3>Datasets</h3>
+          <p>Select the data families to include. The export service will resolve these selections against the canonical DuckDB/Parquet data.</p>
+        </div>
+      </div>
+      <fieldset class="admin-product-access">
+        <legend>Include</legend>
+        <div class="admin-talent-grid">
+          <label class="admin-check"><input type="checkbox" name="dataset" value="video-metadata" checked> Video and stream metadata</label>
+          <label class="admin-check"><input type="checkbox" name="dataset" value="video-statistics" checked> Video statistics</label>
+          <label class="admin-check"><input type="checkbox" name="dataset" value="subtitles" checked> Subtitles</label>
+          <label class="admin-check"><input type="checkbox" name="dataset" value="live-chat" checked> Live chat</label>
+          <label class="admin-check"><input type="checkbox" name="dataset" value="payments" checked> Paid messages</label>
+          <label class="admin-check"><input type="checkbox" name="dataset" value="derived-analytics" checked> Derived classifications and analytics</label>
+        </div>
+      </fieldset>
+
+      <div class="admin-section-heading">
+        <div>
+          <h3>Date range</h3>
+          <p>Export the full retained history or restrict the request to a specific period.</p>
+        </div>
+      </div>
+      <fieldset class="admin-product-access">
+        <legend>Range</legend>
+        <div class="admin-talent-grid">
+          <label class="admin-check"><input type="radio" name="dateMode" value="all" checked> All available data</label>
+          <label class="admin-check"><input type="radio" name="dateMode" value="custom"> Custom range</label>
+        </div>
+        <div class="admin-user-fields" data-custom-range hidden>
+          <label>From <input type="date" name="startDate"></label>
+          <label>To <input type="date" name="endDate"></label>
+        </div>
+      </fieldset>
+
+      <div class="admin-section-heading">
+        <div>
+          <h3>Format</h3>
+          <p>CSV is convenient for general use. Parquet preserves types and is preferred for large analytical datasets.</p>
+        </div>
+      </div>
+      <fieldset class="admin-product-access">
+        <legend>File format</legend>
+        <div class="admin-talent-grid">
+          <label class="admin-check"><input type="radio" name="format" value="csv" checked> CSV package</label>
+          <label class="admin-check"><input type="radio" name="format" value="parquet"> Parquet package</label>
+        </div>
+      </fieldset>
+
+      <div class="admin-section-heading">
+        <div>
+          <h3>Create export</h3>
+          <p data-export-backend-note>
+            The client UI and authorization path are ready. Export generation will activate when a DuckDB export API endpoint is connected.
+          </p>
+        </div>
+      </div>
+      <button type="submit" class="admin-primary-action" data-export-submit disabled>Create export</button>
+    </form>
+  </section>
+</div>
+</div>
+```
