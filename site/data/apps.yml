@@ -11,6 +11,20 @@ apps:
     status: available
     action: Open application
 
+  - id: video-analytics
+    title: Video Analytics
+    description: Explore authorized video performance, metrics, and transcript activity.
+    url: https://video-dashboard.sun-dataanalytics.com
+    status: available
+    action: Open application
+
+  - id: community-analytics
+    title: Community Analytics
+    description: Explore authorized live-chat communities, participation, and audience overlap.
+    url: https://comm-dashboard.sun-dataanalytics.com
+    status: available
+    action: Open application
+
   - id: news-tracker
     title: Media News Tracker
     description: Track industry coverage, entities, themes, and relationships across media reporting.

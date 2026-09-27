@@ -17,6 +17,14 @@
 		{
 			"pattern": "yt-dashboard.sun-dataanalytics.com/*",
 			"zone_name": "sun-dataanalytics.com"
+		},
+		{
+			"pattern": "video-dashboard.sun-dataanalytics.com/*",
+			"zone_name": "sun-dataanalytics.com"
+		},
+		{
+			"pattern": "comm-dashboard.sun-dataanalytics.com/*",
+			"zone_name": "sun-dataanalytics.com"
 		}
 	],
 	// This connects the Worker to the D1 database.

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  dashboardForRequest,
   dashboardTalentCodesForEmail,
   forwardDashboardRequest,
   isDashboardRequest,
@@ -32,6 +33,20 @@ test("dashboard host matching uses the configured hostname", () => {
     ),
     true
   );
+  assert.deepEqual(
+    dashboardForRequest(
+      new URL("https://video-dashboard.sun-dataanalytics.com/"),
+      {}
+    ),
+    { productId: "video-analytics", title: "Video Analytics" }
+  );
+  assert.deepEqual(
+    dashboardForRequest(
+      new URL("https://comm-dashboard.sun-dataanalytics.com/"),
+      {}
+    ),
+    { productId: "community-analytics", title: "Community Analytics" }
+  );
   assert.equal(
     isDashboardRequest(
       new URL("https://talent.example.com/"),
@@ -44,8 +59,29 @@ test("dashboard host matching uses the configured hostname", () => {
 test("dashboard entitlements return exact DuckDB talent codes", async () => {
   const database = talentDatabase(["AVA1", " LEI3 ", "bad code", ""]);
   assert.deepEqual(
-    await dashboardTalentCodesForEmail(database, "client@example.com"),
+    await dashboardTalentCodesForEmail(
+      database,
+      "client@example.com",
+      "video-analytics"
+    ),
     ["AVA1", "LEI3"]
+  );
+});
+
+test("launcher hides Video Analytics without a usable talent code", () => {
+  assert.deepEqual(
+    productsFromRows([
+      {
+        product_id: "video-analytics",
+        product_title: "Video Analytics",
+        product_url: "https://video-dashboard.sun-dataanalytics.com/",
+        product_role: "viewer",
+        talent_id: "unmapped-talent",
+        talent_name: "Unmapped Talent",
+        talent_code: null
+      }
+    ]),
+    []
   );
 });
 
@@ -135,6 +171,7 @@ test("dashboard proxy replaces forged entitlement headers", async () => {
     request,
     database,
     "client@example.com",
+    { productId: "youtube-analytics", title: "Youtube Analytics" },
     async (proxiedRequest) =>
       Response.json({
         email: proxiedRequest.headers.get("X-SDA-Verified-Email"),
@@ -154,6 +191,7 @@ test("dashboard proxy fails closed when no talent is assigned", async () => {
     new Request("https://dashboard.sun-dataanalytics.com/"),
     talentDatabase([]),
     "client@example.com",
+    { productId: "community-analytics", title: "Community Analytics" },
     async () => {
       forwarded = true;
       return new Response("unexpected");

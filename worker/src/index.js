@@ -5,8 +5,21 @@ import {
 } from "./admin.js";
 
 const jwksByTeamDomain = new Map();
-const DEFAULT_DASHBOARD_HOSTNAME = "dashboard.sun-dataanalytics.com";
 const DASHBOARD_PRODUCT_ID = "youtube-analytics";
+const DASHBOARD_PRODUCTS = new Map([
+  [
+    "video-dashboard.sun-dataanalytics.com",
+    { productId: "video-analytics", title: "Video Analytics" }
+  ],
+  [
+    "comm-dashboard.sun-dataanalytics.com",
+    { productId: "community-analytics", title: "Community Analytics" }
+  ]
+]);
+const TALENT_SCOPED_DASHBOARD_PRODUCT_IDS = new Set([
+  DASHBOARD_PRODUCT_ID,
+  ...Array.from(DASHBOARD_PRODUCTS.values(), ({ productId }) => productId)
+]);
 const DASHBOARD_TALENT_CODE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$/;
 const VERIFIED_EMAIL_HEADER = "X-SDA-Verified-Email";
 const ALLOWED_TALENT_CODES_HEADER = "X-SDA-Allowed-Talent-Codes";
@@ -43,11 +56,22 @@ const launcherUserForEmail = (email, env) => ({
   isAdmin: isAdminEmail(email, env)
 });
 
-const configuredDashboardHostname = (env) =>
-  (env.DASHBOARD_HOSTNAME?.trim().toLowerCase() || DEFAULT_DASHBOARD_HOSTNAME);
+const configuredYoutubeDashboardHostname = (env) =>
+  env.DASHBOARD_HOSTNAME?.trim().toLowerCase() ||
+  "dashboard.sun-dataanalytics.com";
+
+const dashboardForRequest = (url, env) => {
+  const hostname = url.hostname.toLowerCase();
+
+  if (hostname === configuredYoutubeDashboardHostname(env)) {
+    return { productId: DASHBOARD_PRODUCT_ID, title: "Youtube Analytics" };
+  }
+
+  return DASHBOARD_PRODUCTS.get(hostname) ?? null;
+};
 
 const isDashboardRequest = (url, env) =>
-  url.hostname.toLowerCase() === configuredDashboardHostname(env);
+  dashboardForRequest(url, env) !== null;
 
 const getJwks = (teamDomain) => {
   if (!jwksByTeamDomain.has(teamDomain)) {
@@ -100,13 +124,15 @@ const productsFromRows = (rows) => {
   const products = new Map();
 
   for (const row of rows) {
-    const isDashboardProduct = row.product_id === DASHBOARD_PRODUCT_ID;
+    const isTalentScopedDashboard = TALENT_SCOPED_DASHBOARD_PRODUCT_IDS.has(
+      row.product_id
+    );
     const dashboardTalentCode = normalizedDashboardTalentCode(row.talent_code);
     const hasUsableDashboardTalent = Boolean(
       row.talent_id && dashboardTalentCode
     );
 
-    if (isDashboardProduct && !hasUsableDashboardTalent) {
+    if (isTalentScopedDashboard && !hasUsableDashboardTalent) {
       continue;
     }
 
@@ -124,7 +150,7 @@ const productsFromRows = (rows) => {
       products.get(row.product_id).permissions.push({
         type: "talent",
         id: row.talent_id,
-        code: isDashboardProduct ? dashboardTalentCode : row.talent_code,
+        code: isTalentScopedDashboard ? dashboardTalentCode : row.talent_code,
         label: row.talent_name
       });
     }
@@ -205,7 +231,7 @@ const productsForEmail = async (database, email) => {
   return productsFromRows(result.results ?? []);
 };
 
-const dashboardTalentCodesForEmail = async (database, email) => {
+const dashboardTalentCodesForEmail = async (database, email, productId) => {
   const result = await database.prepare(`
     WITH effective_access AS (
       SELECT
@@ -253,7 +279,7 @@ const dashboardTalentCodesForEmail = async (database, email) => {
     WHERE users.email = ? COLLATE NOCASE
       AND users.active = 1
     ORDER BY talents.talent_code
-  `).bind(DASHBOARD_PRODUCT_ID, email).all();
+  `).bind(productId, email).all();
 
   return dashboardTalentCodesFromRows(result.results ?? []);
 };
@@ -262,12 +288,17 @@ const forwardDashboardRequest = async (
   request,
   database,
   email,
+  dashboard,
   fetcher = fetch
 ) => {
-  const talentCodes = await dashboardTalentCodesForEmail(database, email);
+  const talentCodes = await dashboardTalentCodesForEmail(
+    database,
+    email,
+    dashboard.productId
+  );
   if (talentCodes.length === 0) {
     return new Response(
-      "No active Youtube Analytics talent permissions were found for this account.",
+      `No active ${dashboard.title} talent permissions were found for this account.`,
       {
         status: 403,
         headers: {
@@ -296,10 +327,10 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const isAdminRoute = url.pathname.startsWith("/api/admin/");
-    const isDashboardRoute = isDashboardRequest(url, env);
+    const dashboard = dashboardForRequest(url, env);
 
     if (
-      !isDashboardRoute &&
+      !dashboard &&
       url.pathname !== "/api/my-products" &&
       !isAdminRoute
     ) {
@@ -345,9 +376,9 @@ export default {
       return handleAdminRequest(request, env.DB, url, email);
     }
 
-    if (isDashboardRoute) {
+    if (dashboard) {
       try {
-        return await forwardDashboardRequest(request, env.DB, email);
+        return await forwardDashboardRequest(request, env.DB, email, dashboard);
       } catch (error) {
         console.error(
           JSON.stringify({
@@ -402,6 +433,7 @@ export {
   configuredAdminEmail,
   dashboardTalentCodesForEmail,
   forwardDashboardRequest,
+  dashboardForRequest,
   isAdminEmail,
   isDashboardRequest,
   launcherUserForEmail,
