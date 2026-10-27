@@ -1,7 +1,10 @@
 /* Cloudflare D1 permission administration */
-.admin-lifecycle-list { display: grid; gap: 1rem; }
-.admin-lifecycle-row { padding: 1rem; border: 1px solid var(--sda-line); border-radius: 8px; }
-.admin-lifecycle-row p { margin: 0.4rem 0; }
+.admin-talent-tools { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 0.6rem; }
+.admin-talent-card { margin: 0.8rem 0; padding: 0.85rem; border: 1px solid var(--sda-line); border-radius: 8px; }
+.admin-talent-lifecycle { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.35rem 0.8rem; margin-top: 0.7rem; padding-top: 0.7rem; border-top: 1px solid var(--sda-soft-line); }
+.admin-talent-lifecycle p { margin: 0; font-size: 0.84rem; }
+.admin-talent-lifecycle .admin-lifecycle-metadata { color: var(--sda-muted); font-size: 0.76rem; }
+.admin-talent-lifecycle .admin-row-actions { grid-column: 2; grid-row: 1 / span 2; flex-wrap: wrap; }
 #quarto-content.page-columns > #quarto-document-content:has(.admin-shell) {
   grid-column: screen-start / screen-end !important;
 }
@@ -530,11 +533,10 @@
 
 .admin-talent-row {
   display: grid;
-  grid-template-columns: minmax(10rem, 1fr) auto minmax(7rem, auto) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 0.8rem;
   align-items: center;
-  padding: 0.72rem 0;
-  border-bottom: 1px solid var(--sda-soft-line);
+  padding: 0;
 }
 
 .admin-talent-row code {
@@ -570,6 +572,8 @@
 }
 
 @media (max-width: 880px) {
+  .admin-talent-lifecycle { grid-template-columns: 1fr; }
+  .admin-talent-lifecycle .admin-row-actions { grid-column: auto; grid-row: auto; }
   #quarto-document-content:has(.admin-shell) > #title-block-header,
   #quarto-document-content:has(.admin-shell) > .admin-shell {
     width: min(100% - 2rem, 1240px);

@@ -76,6 +76,7 @@ ul.task-list li input[type="checkbox"] {
   }
 }</script>
 <meta name="robots" content="noindex, nofollow, noarchive">
+<link rel="stylesheet" href="css/styles/admin.css?v=talents-20261027">
 
 
 <link rel="stylesheet" href="css/styles.css">
@@ -229,35 +230,30 @@ ul.task-list li input[type="checkbox"] {
       <div data-managed-grants=""></div>
     </form>
 
-    <section class="admin-panel admin-talent-panel">
+    <section class="admin-panel admin-talent-panel" data-lifecycle-root="">
       <div class="admin-panel-heading">
         <div>
-          <span class="admin-eyebrow">Permission catalog</span>
+          <span class="admin-eyebrow">Permissions, collection and processing</span>
           <h2 class="anchored">Talents</h2>
           <p class="admin-catalog-status" data-catalog-sync-status="">
             Loading the DuckDB talent catalog status...
           </p>
         </div>
+        <div class="admin-talent-tools">
+        <button type="button" data-lifecycle-refresh="">Refresh status</button>
         <form class="admin-add-talent" data-add-talent-form="">
           <label class="visually-hidden" for="new-talent-name">New talent name</label>
           <input id="new-talent-name" name="displayName" placeholder="New talent name" required="">
           <button type="submit">Add talent</button>
         </form>
+        </div>
       </div>
       <p class="admin-panel-help">
-        Dashboard talents are synchronized from DuckDB. Manual talents can still be added for other products.
+        Manage client access, collection and processing for each talent below. Stopping collection or processing preserves existing data and takes effect at safe checkpoints.
       </p>
+      <p data-lifecycle-status="" role="status" aria-live="polite">Loading collection and processing status…</p>
       <div class="admin-talent-list" data-talent-list=""></div>
-    </section>
-
-    <section class="admin-panel" data-lifecycle-root="">
-      <div class="admin-panel-heading">
-        <h2 class="anchored">Collection and processing</h2>
-        <button type="button" data-lifecycle-refresh="">Refresh status</button>
-      </div>
-      <p>Stop collection prevents new data from being collected. Stop processing blocks downstream work on collected data at safe checkpoints. Use both controls to stop collection and processing. Existing data, results, checkpoints and client access are preserved. Stopping processing does not confirm that running jobs have stopped.</p>
-      <p data-lifecycle-status="" role="status" aria-live="polite">Loading lifecycle status…</p>
-      <div class="admin-lifecycle-list" data-lifecycle-list=""></div>
+      <div data-lifecycle-unmapped=""></div>
     </section>
 
     <section class="admin-panel admin-audit-panel">
@@ -674,8 +670,8 @@ ul.task-list li input[type="checkbox"] {
   </script>
 </div> <!-- /content -->
 <script src="assets/js/access-identity.js"></script>
-<script src="assets/js/admin-permissions.js"></script>
-<script src="assets/js/admin-lifecycle.js"></script>
+<script src="assets/js/admin-permissions.js?v=talents-20261027"></script>
+<script src="assets/js/admin-lifecycle.js?v=talents-20261027"></script>
 
 
 
