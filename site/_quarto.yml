@@ -1,6 +1,9 @@
 project:
   type: website
   output-dir: _site
+  resources:
+    - assets/js/**
+    - css/styles/admin.css
   render:
     - index.qmd
     - products.qmd

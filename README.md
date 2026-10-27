@@ -491,6 +491,14 @@ The frontend never retries a failed write automatically. Stop collection/Resume
 collection map to the existing `archive`/`restore` API actions; stored fields and
 behavior are unchanged.
 
+The Talents panel combines client-access settings and collection/processing
+actions in one card per talent. Lifecycle state joins the permission catalog by
+exact `talentCode`, never display name or permission ID. Client-access saves and
+lifecycle changes remain separate API operations. Manual talents keep their
+permission settings without guessed processing identities; canonical talents
+awaiting a permission-catalog link remain visible in the same panel. Failed
+lifecycle reads remove stale actions while leaving permission forms available.
+
 The existing Access JWT, `ADMIN_EMAIL`, same-origin and `X-SDA-Admin` checks apply.
 The Worker then calls a small bridge on CT 104 using a separate bearer secret and
 the verified email, discarding browser actor and authorization headers. The bridge

@@ -242,6 +242,13 @@
 
   const renderTalents = () => {
     elements.talentList.replaceChildren();
+    const notifyCatalog = () => {
+      const panel = root.querySelector("[data-lifecycle-root]");
+      if (panel) {
+        panel.dataset.catalogReady = "true";
+        panel.dispatchEvent(new Event("talent-catalog-rendered"));
+      }
+    };
 
     if (state.catalogSync) {
       elements.catalogSync.textContent =
@@ -254,10 +261,13 @@
 
     if (state.talents.length === 0) {
       appendEmptyMessage(elements.talentList, "No talents have been added yet.");
+      notifyCatalog();
       return;
     }
 
     for (const talent of state.talents) {
+      const card = document.createElement("article");
+      card.className = "admin-talent-card";
       const form = document.createElement("form");
       form.className = "admin-talent-row";
       const name = document.createElement("input");
@@ -272,14 +282,14 @@
       active.type = "checkbox";
       active.name = "active";
       active.checked = talent.active;
-      activeLabel.append(active, document.createTextNode("Active"));
+      activeLabel.append(active, document.createTextNode("Client access enabled"));
       const id = document.createElement("code");
       id.textContent = talent.talentCode
-        ? `${talent.talentCode} · DuckDB`
+        ? `${talent.talentCode} · catalog`
         : `${talent.id} · manual`;
       const button = document.createElement("button");
       button.type = "submit";
-      button.textContent = "Save";
+      button.textContent = "Save access";
       const deleteButton = document.createElement("button");
       deleteButton.type = "button";
       deleteButton.className = "admin-danger-action";
@@ -340,8 +350,14 @@
           }
         });
       }
-      elements.talentList.appendChild(form);
+      const lifecycle = document.createElement("div");
+      lifecycle.className = "admin-talent-lifecycle";
+      lifecycle.dataset.lifecycleTalent = "";
+      lifecycle.dataset.talentCode = talent.talentCode || "";
+      card.append(form, lifecycle);
+      elements.talentList.appendChild(card);
     }
+    notifyCatalog();
   };
 
   const auditDescription = (entry) => {
