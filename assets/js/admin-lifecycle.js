@@ -29,7 +29,7 @@
       const title = document.createElement("strong");
       title.textContent = `${talent.display_name} (${talent.talent_code})`;
       const state = document.createElement("p");
-      state.textContent = `Collection: ${talent.retrieval_enabled ? "enabled" : "stopped"}. Processing: ${talent.processing_enabled ? "enabled" : "pause requested; future work blocked"}. Revision: ${talent.revision}.`;
+      state.textContent = `Collection: ${talent.retrieval_enabled ? "enabled" : "stopped"}. Processing: ${talent.processing_enabled ? "enabled" : "stop requested; future work blocked"}. Revision: ${talent.revision}.`;
       const metadata = document.createElement("p");
       metadata.textContent = talent.updated_at
         ? `Last saved: ${talent.updated_at} by ${talent.updated_by}` : "No saved change.";
@@ -37,7 +37,7 @@
       buttons.className = "admin-row-actions";
       const actions = [
         [talent.retrieval_enabled ? "archive" : "restore", talent.retrieval_enabled ? "Stop collection" : "Resume collection"],
-        [talent.processing_enabled ? "pause" : "resume", talent.processing_enabled ? "Pause processing" : "Resume processing"]
+        [talent.processing_enabled ? "pause" : "resume", talent.processing_enabled ? "Stop processing" : "Resume processing"]
       ];
       for (const [action, label] of actions) {
         const button = document.createElement("button");
