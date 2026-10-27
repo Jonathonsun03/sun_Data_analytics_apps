@@ -527,6 +527,13 @@ Focused checks: `npm run test:worker` (includes HTTP boundary, signed nonadmin J
 origin proxy and DOM fixture tests), plus `node --check site/assets/js/admin-lifecycle.js`.
 Tests use disposable identities and fixtures, not live Cloudflare or client state.
 
+Lifecycle origin requests use `redirect: "manual"` and reject redirects rather
+than following them. The deployed Workers runtime rejects `redirect: "error"`
+even though Node's fetch accepts it. The Miniflare tests exercise the actual
+default fetch adapter for reads and writes, and verify that a redirect cannot
+forward the bridge credential to a different host. Sanitized diagnostics log
+only the failure phase, error class, HTTP status and challenge indicator.
+
 
 Production activation (2026-10-27): this integration is deployed against the real
 10-talent canonical catalog. The existing administrator-only page uses **Stop
