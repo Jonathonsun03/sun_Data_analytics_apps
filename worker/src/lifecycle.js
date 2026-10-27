@@ -59,6 +59,7 @@ export async function handleLifecycleRequest(request, env, url, email, fetcher =
       return response({ error: "Invalid lifecycle change" }, 400);
     }
   }
+  let phase = "configuration";
   try {
     const origin = new URL(env.TALENT_LIFECYCLE_ORIGIN);
     if (origin.protocol !== "https:" || origin.username || origin.password ||
@@ -66,6 +67,7 @@ export async function handleLifecycleRequest(request, env, url, email, fetcher =
         !env.TALENT_BRIDGE_SECRET || env.TALENT_BRIDGE_SECRET.length < 32) {
       throw new Error("Invalid bridge configuration");
     }
+    phase = "origin_fetch";
     const upstream = await fetcher(new URL(`/v1/talents${suffix}`, origin), {
       method: request.method,
       redirect: "error",
@@ -78,6 +80,7 @@ export async function handleLifecycleRequest(request, env, url, email, fetcher =
       },
       ...(body ? { body: JSON.stringify(body) } : {})
     });
+    phase = "origin_response";
     if ([200, 400, 404, 409].includes(upstream.status)) {
       const payload = await upstream.json();
       if (upstream.status === 200 && !suffix) {
@@ -85,8 +88,12 @@ export async function handleLifecycleRequest(request, env, url, email, fetcher =
       }
       return response(payload, upstream.status);
     }
-  } catch {
-    // Do not log secrets, URLs or origin response bodies.
+    console.warn(JSON.stringify({ event: "lifecycle.origin_unavailable",
+      status: upstream.status, mitigation: upstream.headers.get("cf-mitigated") }));
+  } catch (error) {
+    // Log only a phase and error class, never headers, URLs, bodies or credentials.
+    console.warn(JSON.stringify({ event: "lifecycle.request_failed", phase,
+      error_name: error instanceof Error ? error.name : "UnknownError" }));
   }
   return response({ error: "Lifecycle service is temporarily unavailable" }, 503);
 }
