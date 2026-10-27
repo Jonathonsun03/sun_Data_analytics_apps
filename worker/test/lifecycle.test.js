@@ -22,7 +22,7 @@ test("Worker sends only verified actor, service credential and validated change;
     assert.equal(options.headers["Authorization"], `Bearer ${env.TALENT_BRIDGE_SECRET}`);
     assert.equal(options.headers["X-SDA-Lifecycle-Actor"], "admin@example.com");
     assert.equal(Object.keys(options.headers).length, 3);
-    assert.equal(options.redirect, "error");
+    assert.equal(options.redirect, "manual");
     assert.deepEqual(JSON.parse(options.body), { action: "pause", expected_revision: 2 });
     return Response.json({ error: "Refresh before saving" }, { status: 409 });
   });

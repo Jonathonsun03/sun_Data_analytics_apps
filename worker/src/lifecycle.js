@@ -70,7 +70,7 @@ export async function handleLifecycleRequest(request, env, url, email, fetcher =
     phase = "origin_fetch";
     const upstream = await fetcher(new URL(`/v1/talents${suffix}`, origin), {
       method: request.method,
-      redirect: "error",
+      redirect: "manual",
       signal: AbortSignal.timeout(10000),
       // Never forward browser cookies, authorization, actor or Access headers.
       headers: {

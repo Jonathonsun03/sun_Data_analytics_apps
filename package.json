@@ -17,6 +17,7 @@
     "jose": "6.2.3"
   },
   "devDependencies": {
+    "miniflare": "4.20260714.0",
     "wrangler": "^4.112.0"
   }
 }
