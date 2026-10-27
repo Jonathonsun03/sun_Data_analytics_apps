@@ -6,7 +6,7 @@ format:
     include-in-header:
       text: |
         <meta name="robots" content="noindex, nofollow, noarchive">
-        <link rel="stylesheet" href="css/styles/admin.css?v=talents-20261027">
+        <link rel="stylesheet" href="css/styles/admin.css?v=talents-20261027-2">
     include-after-body:
       text: |
         <script src="assets/js/access-identity.js"></script>

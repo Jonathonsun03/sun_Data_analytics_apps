@@ -531,12 +531,13 @@
   border-top: 1px solid var(--sda-line);
 }
 
-.admin-talent-row {
+.admin-talent-card .admin-talent-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 0.8rem;
   align-items: center;
   padding: 0;
+  border-bottom: 0;
 }
 
 .admin-talent-row code {
@@ -624,7 +625,7 @@
 
   .admin-user-fields,
   .admin-add-talent,
-  .admin-talent-row,
+  .admin-talent-card .admin-talent-row,
   .admin-audit-list article,
   .admin-managed-list li {
     grid-template-columns: 1fr;
