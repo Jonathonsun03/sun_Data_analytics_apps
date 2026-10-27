@@ -483,7 +483,7 @@ Cloudflare login
 
 ## Talent lifecycle administration
 
-The admin page now has separate Stop collection/Resume collection and Pause processing/Resume processing
+The admin page now has separate Stop collection/Resume collection and Stop processing/Resume processing
 controls. They call `/api/admin/lifecycle` (GET list) and
 `/api/admin/lifecycle/<talent_code>` (GET status, POST change). POST accepts exactly
 `action` and `expected_revision`; stale revisions return 409 and require a refresh.
