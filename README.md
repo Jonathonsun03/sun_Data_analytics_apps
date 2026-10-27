@@ -526,3 +526,18 @@ independent; neither deletes historical data, results, checkpoints or credential
 Focused checks: `npm run test:worker` (includes HTTP boundary, signed nonadmin JWT,
 origin proxy and DOM fixture tests), plus `node --check site/assets/js/admin-lifecycle.js`.
 Tests use disposable identities and fixtures, not live Cloudflare or client state.
+
+
+Production activation (2026-10-27): this integration is deployed against the real
+10-talent canonical catalog. The existing administrator-only page uses **Stop
+collection / Resume collection** and **Stop processing / Resume processing**.
+Worker enforcement was configured first, the authenticated origin was checked
+from Cloudflare, and writes were enabled last. No real talent switch or client
+permission was changed during rollout. The diagnostic cron was removed; normal
+Worker source is deployed. External automated requests to the origin may receive
+a Cloudflare challenge; the authenticated Worker-to-origin edge path was verified
+with HTTP 200 and all 10 talents. No global security protection was disabled.
+
+Rollback records live privately at `/root/talent-lifecycle-rollout-20261027` on
+CT 105. The original Worker version is `3dd66761-acff-4a18-a07d-06e065fed8b5`.
+Keep saved control records and backend enforcement when rolling back UI/proxy code.
