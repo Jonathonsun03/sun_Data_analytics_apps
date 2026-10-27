@@ -479,3 +479,50 @@ Cloudflare login
   -> dashboard opens without another login
   -> unauthorized users are blocked at both hostnames
 ```
+
+
+## Talent lifecycle administration
+
+The admin page now has separate Stop collection/Resume collection and Pause processing/Resume processing
+controls. They call `/api/admin/lifecycle` (GET list) and
+`/api/admin/lifecycle/<talent_code>` (GET status, POST change). POST accepts exactly
+`action` and `expected_revision`; stale revisions return 409 and require a refresh.
+The frontend never retries a failed write automatically. Stop collection/Resume
+collection map to the existing `archive`/`restore` API actions; stored fields and
+behavior are unchanged.
+
+The existing Access JWT, `ADMIN_EMAIL`, same-origin and `X-SDA-Admin` checks apply.
+The Worker then calls a small bridge on CT 104 using a separate bearer secret and
+the verified email, discarding browser actor and authorization headers. The bridge
+validates identities against the canonical read-only DuckDB catalog and calls the
+existing Python atomic writer. One JSON file per talent on the existing shared disk
+is authoritative. D1 fields, active flags and client grants are unchanged.
+
+Worker configuration (remote values, never browser source):
+
+- `TALENT_LIFECYCLE_ORIGIN=https://talent-control-origin.sun-dataanalytics.com`
+- `TALENT_BRIDGE_SECRET`: Wrangler secret, at least 32 random ASCII characters;
+  must match the origin service's root-only environment file.
+- `TALENT_LIFECYCLE_WRITES_ENABLED=false` until enforcement is deployed and verified.
+
+The existing remotely managed Tunnel in CT 105 needs one new origin hostname
+forwarding to `http://100.118.151.32:8765` on CT 104 over the existing tailnet.
+The permission frontend and Worker still run externally; this checkout is source.
+No local Shiny or client talent-dashboard change is required.
+
+The exact approval-gated rollout and rollback commands live in the analysis
+repository on CT 104 at `py_scripts/lib/talent_lifecycle/ROLLOUT.md`. Deploy worker
+checks first, then the authenticated origin, then the Worker with writes disabled,
+then publish the admin page, and only then enable writes. Save the prior Worker
+version and rendered frontend artifact before deployment. Roll back the UI/Worker
+first and stop the bridge while keeping worker enforcement and all saved records.
+Do not unset the control root or restore old JSON records as a software rollback.
+
+Pause is cooperative: maintained jobs check before work and at documented safe
+checkpoints. Current requests, admitted jobs and remote batches may finish. A saved
+pause is not confirmation of a drained system. Archive/Restore and Pause/Resume are
+independent; neither deletes historical data, results, checkpoints or credentials.
+
+Focused checks: `npm run test:worker` (includes HTTP boundary, signed nonadmin JWT,
+origin proxy and DOM fixture tests), plus `node --check site/assets/js/admin-lifecycle.js`.
+Tests use disposable identities and fixtures, not live Cloudflare or client state.

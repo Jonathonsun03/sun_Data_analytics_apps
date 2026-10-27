@@ -1,4 +1,5 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
+import { handleLifecycleRequest } from "./lifecycle.js";
 import {
   handleAdminRequest,
   normalizedEmail
@@ -373,6 +374,10 @@ export default {
         return jsonResponse({ error: "Administrator access required" }, 403);
       }
 
+      if (url.pathname === "/api/admin/lifecycle" ||
+          url.pathname.startsWith("/api/admin/lifecycle/")) {
+        return handleLifecycleRequest(request, env, url, email);
+      }
       return handleAdminRequest(request, env.DB, url, email);
     }
 

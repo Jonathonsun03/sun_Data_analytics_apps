@@ -1,4 +1,7 @@
 /* Cloudflare D1 permission administration */
+.admin-lifecycle-list { display: grid; gap: 1rem; }
+.admin-lifecycle-row { padding: 1rem; border: 1px solid var(--sda-line); border-radius: 8px; }
+.admin-lifecycle-row p { margin: 0.4rem 0; }
 #quarto-content.page-columns > #quarto-document-content:has(.admin-shell) {
   grid-column: screen-start / screen-end !important;
 }

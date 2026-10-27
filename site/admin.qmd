@@ -10,6 +10,7 @@ format:
       text: |
         <script src="assets/js/access-identity.js"></script>
         <script src="assets/js/admin-permissions.js"></script>
+        <script src="assets/js/admin-lifecycle.js"></script>
 ---
 
 ```{=html}
@@ -117,6 +118,16 @@ format:
         Dashboard talents are synchronized from DuckDB. Manual talents can still be added for other products.
       </p>
       <div class="admin-talent-list" data-talent-list></div>
+    </section>
+
+    <section class="admin-panel" data-lifecycle-root>
+      <div class="admin-panel-heading">
+        <h2>Collection and processing</h2>
+        <button type="button" data-lifecycle-refresh>Refresh status</button>
+      </div>
+      <p>Stop collection prevents new data from being collected. Pause processing blocks downstream work on collected data at safe checkpoints. Use both controls to stop collection and processing. Existing data, results, checkpoints and client access are preserved. Saving a pause does not confirm that running jobs have stopped.</p>
+      <p data-lifecycle-status role="status" aria-live="polite">Loading lifecycle status…</p>
+      <div class="admin-lifecycle-list" data-lifecycle-list></div>
     </section>
 
     <section class="admin-panel admin-audit-panel">
